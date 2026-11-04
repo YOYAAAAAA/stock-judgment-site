@@ -207,7 +207,7 @@
     var wrap=document.createElement('div');
     wrap.className='navdrop';wrap.id='navDrop';
     wrap.innerHTML='<button class="nav-btn" type="button" id="navBtn" aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">'
-      +'<span id="navBtnLabel">六层</span><i class="nb-caret" aria-hidden="true">▾</i></button>'
+      +'<span id="navBtnLabel">'+(isLayer?('第 '+layer.no+' 层'):'六层')+'</span><i class="nb-caret" aria-hidden="true">▾</i></button>'
       +'<div class="nav-menu" id="navMenu" role="menu" hidden></div>';
     right.insertBefore(wrap,right.firstChild);
     var btn=wrap.querySelector('#navBtn'),menu=wrap.querySelector('#navMenu');
@@ -532,56 +532,65 @@
     var all=getVerdicts();
     if(all[id]){delete all[id];set(VERDICT_KEY,all);}
   }
+  /* 单卷口径：每维权重 −2…+2；命中否决项按 −6 计（替代原权重，不叠加）。
+     已答满分 = 已答维度各自最高权重之和；得分率 = (得分 + 已答满分) / (2 × 已答满分)。 */
   function verdictOf(answers,layerId){
     var J=window.JUDGE&&window.JUDGE.layers[layerId];
     var lay=layerById(layerId);
     var denom=denomOf(lay);
-    if(!J||!lay) return {layerId:layerId,score:0,coverage:0,denom:denom,state:'unknown',strength:2,rows:[],vetoes:[],veto:false};
-    var score=0,rows=[],vetoes=[];
+    if(!J||!lay) return {layerId:layerId,score:0,maxScore:0,rate:0.5,coverage:0,denom:denom,state:'unknown',strength:1,rows:[],vetoes:[],veto:false};
+    var score=0,maxScore=0,rows=[],vetoes=[];
     Object.keys(answers||{}).forEach(function(k){
       var ok=answers[k];if(!ok) return;
-      var w=(J.w[k]&&J.w[k][ok]);if(typeof w!=='number') w=0;
+      var node=J.w[k];if(!node) return;
+      var w=node[ok];if(typeof w!=='number') w=0;
       var v=J.veto[k+'.'+ok]||null;
-      score+=w;
-      rows.push({node:k,opt:ok,w:w,veto:v});
+      var eff=v?-6:w;
+      score+=eff;
+      var mx=0;
+      Object.keys(node).forEach(function(o){var x=node[o];if(typeof x==='number'&&x>mx) mx=x;});
+      maxScore+=mx;
+      rows.push({node:k,opt:ok,w:w,eff:eff,max:mx,veto:v});
       if(v) vetoes.push(v);
     });
     var coverage=Math.min(rows.length,denom);
-    var st=coverage<3?'unknown':(vetoes.length?'bad':(score>=4?'good':(score<=-4?'bad':'neutral')));
-    var sg=st==='unknown'?2:(vetoes.length?3:(Math.abs(score)>=7?3:(Math.abs(score)>=3?2:1)));
-    return {layerId:layerId,score:score,coverage:coverage,denom:denom,state:st,strength:sg,rows:rows,vetoes:vetoes,veto:!!vetoes.length};
+    var rate=maxScore>0?(score+maxScore)/(2*maxScore):0.5;
+    var st=rate>=0.65?'good':(rate<0.40?'bad':'neutral');
+    var sg=Math.abs(rate-0.5)>=0.18?3:(Math.abs(rate-0.5)>=0.10?2:1);
+    return {layerId:layerId,score:score,maxScore:maxScore,rate:rate,coverage:coverage,denom:denom,state:st,strength:sg,rows:rows,vetoes:vetoes,veto:!!vetoes.length};
   }
-  /* 总判断：跨六层，分数=各层已答维度权重求和；覆盖=已答维度/全部维度；任一层 veto 直接转绿。
-     每层只存本层派生结果，故同一份答案反复进出不会重复累加。 */
+  /* 总成绩：整卷从六层已保存答案重算（不做累加器，天然幂等）。 */
+  function answersOfLayer(id){
+    var s=get(stateKey(id),null);
+    return (s&&typeof s==='object'&&s.answers&&typeof s.answers==='object')?s.answers:{};
+  }
   function globalVerdict(){
-    var lay=window.LAYERS||[],vs=getVerdicts(),score=0,cov=0,denom=0,done=0,maxDone=0,vetoes=[],rows=[],i;
-    for(i=0;i<lay.length;i++){
-      var l=lay[i],d=denomOf(l),v=vs[l.id];
-      denom+=d;
-      if(!v) continue;
-      var c=Math.min(v.coverage||0,d);
-      score+=v.score||0;cov+=c;
+    var lay=window.LAYERS||[],score=0,maxScore=0,cov=0,denom=0,done=0,maxDone=0,vetoes=[],rows=[];
+    lay.forEach(function(l){
+      var v=verdictOf(answersOfLayer(l.id),l.id);
+      denom+=v.denom;
+      score+=v.score;maxScore+=v.maxScore;
+      var c=Math.min(v.coverage,v.denom);cov+=c;
       if(c>0){done++;if(l.no>maxDone)maxDone=l.no;}
-      if(v.veto){
-        (v.vetoes&&v.vetoes.length?v.vetoes:['有一项命中否决']).forEach(function(t){
-          vetoes.push('第 '+l.no+' 层 · '+t);
-        });
-      }
-      rows.push({layerNo:l.no,title:l.title,state:v.state,score:v.score,coverage:c,denom:d,veto:!!v.veto});
-    }
-    var st=vetoes.length?'bad':(cov<3?'unknown':(score>=4?'good':(score<=-4?'bad':'neutral')));
-    var sg=vetoes.length?3:(Math.abs(score)>=7?3:(Math.abs(score)>=3?2:1));
-    return {layerId:'index',score:score,coverage:cov,denom:denom,layersDone:done,maxDone:maxDone,
-      state:st,strength:sg,rows:rows,vetoes:vetoes,veto:!!vetoes.length};
+      (v.vetoes||[]).forEach(function(t){vetoes.push('第 '+l.no+' 层 · '+t);});
+      rows.push({layerNo:l.no,title:l.title,answered:c,denom:v.denom,score:v.score,rate:v.rate,
+        maxScore:v.maxScore,state:v.state,veto:!!(v.vetoes&&v.vetoes.length),vetoes:v.vetoes||[]});
+    });
+    var rate=maxScore>0?(score+maxScore)/(2*maxScore):0.5;
+    var comp=denom>0?cov/denom:0;
+    var st=comp<0.34?'unknown':(rate>=0.65?'good':(rate<0.40?'bad':'neutral'));
+    var sg=Math.abs(rate-0.5)>=0.18?3:(Math.abs(rate-0.5)>=0.10?2:1);
+    return {layerId:'index',score:score,maxScore:maxScore,rate:rate,coverage:cov,denom:denom,completion:comp,
+      thin:comp>=0.34&&comp<0.60,layersDone:done,maxDone:maxDone,state:st,strength:sg,rows:rows,vetoes:vetoes,veto:!!vetoes.length};
   }
   function phraseOf(key,st,v){
     if(st==='unknown'){
-      var cov=v?('已答 '+v.coverage+'/'+v.denom+' 步'):'';
+      var pct=v?Math.round((v.coverage/v.denom)*100):0;
       return {main:'还没看出来',nat:'未判',act:'等',
-        full:(key==='index'?'六层里还凑不满三层结论':'这一层还没答到 3 步')+(cov?'：'+cov+'，先不下结论。':'。'),
-        pos:'先按未判处理，不新开仓，把没答的步骤补齐',
+        full:'卷面只答了 '+pct+'%（'+((v?v.coverage:0)+'/'+(v?v.denom:0))+' 维），不到 34%，先不给结论。',
+        pos:'先不下结论、不新开仓，把没答的题补上',
         stop:'没有仓位，不设止损',
-        flip:'补到 3 步以上再看颜色；一旦命中否决直接转绿'};
+        flip:'卷面到 34% 以上才出结论；颜色只看整卷得分率'};
     }
     var p=(window.JUDGE&&window.JUDGE.phrase)||{};
     var set=p[key]||p.index;
@@ -589,7 +598,7 @@
         full:'还没有这一层的结论文案，先按未判处理。',pos:'不新开仓',stop:'没有仓位，不设止损',flip:'补齐作答后再看'};
   }
   function phraseKey(v){return v&&v.layerId&&v.layerId!=='index'?v.layerId:'index';}
-  var STATE_LABEL={good:'有利',bad:'不利',neutral:'观望',unknown:'未判'};
+  var STATE_LABEL={good:'有利',bad:'不利',neutral:'平稳',unknown:'未判'};
   var COLOR_LABEL={good:'红',bad:'绿',neutral:'黄',unknown:'蓝'};
   var STRENGTH_LABEL={1:'浅',2:'中',3:'强'};
 
@@ -677,36 +686,54 @@
     gbarEl=document.createElement('div');
     gbarEl.id='gbar';gbarEl.className='gbar';
     gbarEl.setAttribute('role','status');
-    gbarEl.innerHTML='<span class="gbar-t"></span><span class="gbar-m"></span><span class="gbar-s"></span>'
-      +'<i class="gbar-c" aria-hidden="true"></i>';
+    gbarEl.innerHTML='<span class="gbar-t"></span><span class="gbar-rate"></span>'
+      +'<span class="gbar-score"></span><span class="gbar-cov"></span><span class="gbar-p"></span>'
+      +'<span class="gbar-note"></span><i class="gbar-c" aria-hidden="true"></i>';
     wrap.insertBefore(gbarEl,wrap.firstChild);
     document.body.dataset.expanded='false';
   }
-  function paintGlobalBar(){
+  function pctOf(x){return Math.round(x*100)+'%';}
+  function paintGlobalBar(g){
     if(!gbarEl) return;
-    var g=globalVerdict();
+    g=globalVerdict();
     gbarEl.dataset.state=g.state;
-    var t=gbarEl.querySelector('.gbar-t'),m=gbarEl.querySelector('.gbar-m'),s=gbarEl.querySelector('.gbar-s');
+    var t=gbarEl.querySelector('.gbar-t'),r=gbarEl.querySelector('.gbar-rate'),
+        s=gbarEl.querySelector('.gbar-score'),c=gbarEl.querySelector('.gbar-cov'),
+        p=gbarEl.querySelector('.gbar-p'),n=gbarEl.querySelector('.gbar-note');
     if(t) t.textContent='总判断 · '+GLOBAL_LABEL[g.state];
-    var parts=[];
-    if(g.vetoes.length) parts.push('否决 '+g.vetoes[0]);
-    else parts.push(g.layersDone+'/6 层已答');
-    parts.push('覆盖 '+g.coverage+'/'+g.denom);
-    if(m) m.textContent=parts.join(' · ');
-    if(s) s.textContent=signed(g.score);
-    var label='总判断：'+GLOBAL_LABEL[g.state]+'。'+g.layersDone+'/6 层已答，覆盖 '+g.coverage+'/'+g.denom
-      +' 个维度，分数 '+signed(g.score)+'。'+(g.vetoes.length?'否决来源：'+g.vetoes.join('；')+'。':'');
+    if(r) r.textContent=pctOf(g.rate);
+    if(s) s.innerHTML='<em>得分</em><b>'+signed(g.score)+'/'+g.maxScore+'</b>';
+    if(c) c.innerHTML='<em>覆盖</em><b>'+g.coverage+'/'+g.denom+'</b>';
+    if(p){
+      p.innerHTML=g.rows.map(function(x){
+        var cls=(x.answered>=x.denom?' full':(x.answered>0?' on':''));
+        return '<i class="'+cls.trim()+'" title="第 '+x.layerNo+' 层：已答 '+x.answered+'/'+x.denom+'">'
+          +x.answered+'/'+x.denom+'</i>';
+      }).join('');
+    }
+    if(n){
+      var bits=[];
+      if(g.state==='unknown') bits.push('卷面 '+pctOf(g.completion)+'，结论仅供参考');
+      else if(g.thin) bits.push('卷面 '+pctOf(g.completion)+'，证据偏薄');
+      if(g.vetoes.length) bits.push('否决：'+g.vetoes.join('；'));
+      n.textContent=bits.join(' · ');
+      if(g.vetoes.length) n.dataset.veto='1'; else delete n.dataset.veto;
+    }
+    var label='总判断：'+GLOBAL_LABEL[g.state]+'。得分 '+signed(g.score)+' / 已答满分 '+g.maxScore
+      +'，得分率 '+pctOf(g.rate)+'，覆盖 '+g.coverage+'/'+g.denom+' 维，'+g.layersDone+'/6 层已答，卷面 '+pctOf(g.completion)
+      +'。'+(g.vetoes.length?'否决来源：'+g.vetoes.join('；')+'。':'');
     gbarEl.setAttribute('aria-label',label);
   }
   function signed(n){return (n>0?'+':'')+n;}
 
-  function paintVerdict(v,scope){
-    vData=v;vScope=scope;
+  function paintVerdict(scope){
+    var g=globalVerdict();
+    vData=g;vScope=scope||'index';
     var b=document.body;
-    b.dataset.verdict=v.state;b.dataset.strength=v.strength;
+    b.dataset.verdict=g.state;b.dataset.strength=g.strength;
     var tb=document.querySelector('.topbar');
     document.documentElement.style.setProperty('--navH',(tb?tb.offsetHeight:56)+'px');
-    var ph=phraseOf(phraseKey(v),v.state,v);
+    var ph=phraseOf('index',g.state,g);
     var br='（'+ph.nat+'·'+ph.act+'）';
     [vBig,vBig2].forEach(function(el){
       if(!el) return;
@@ -718,11 +745,9 @@
     });
     var note=document.getElementById('vnote');
     if(note){
-      note.textContent=v.coverage>=v.denom
-        ?'六步答完：'+STATE_LABEL[v.state]+' · '+STRENGTH_LABEL[v.strength]+'档。'
-        :'覆盖 '+v.coverage+'/'+v.denom+'，还有 '+(v.denom-v.coverage)+' 步没答。答到 3 步以上才给颜色结论。';
+      note.textContent='卷面 '+pctOf(g.completion)+'：已答 '+g.coverage+'/'+g.denom+' 维，不到 34%，先不给结论。';
     }
-    paintGlobalBar();
+    paintGlobalBar(g);
   }
 
   function applyLayerVerdict(){
@@ -730,10 +755,10 @@
     var v=verdictOf(state.answers, layer.id);
     v.done=state.doneEntries.slice();
     if(v.coverage>0) saveVerdict(layer.id,v); else clearVerdict(layer.id);
-    paintVerdict(v,'layer');
+    paintVerdict('layer');
   }
   function applyIndexVerdict(){
-    paintVerdict(globalVerdict(),'index');
+    paintVerdict('index');
   }
 
   function optLabelOf(lay,nodeKey,optKey){
@@ -746,43 +771,44 @@
     var g=globalVerdict();
     var gph=phraseOf('index',g.state,g);
     var gnat=STATE_LABEL[g.state]+' · '+COLOR_LABEL[g.state]+' · '+STRENGTH_LABEL[g.strength]+'档';
-    var gtot='<div class="jrow jtot"><span class="jk">合计分</span><span class="jv num '+(g.score>0?'pos':(g.score<0?'neg':'zero'))+'">'+signed(g.score)+'</span></div>'
-      +'<div class="jrow"><span class="jk">覆盖度</span><span class="jv num">'+g.coverage+' / '+g.denom+'</span></div>'
-      +'<div class="jrow"><span class="jk">已答层数</span><span class="jv num">'+g.layersDone+' / 6</span></div>';
+    var gtot='<div class="jrow jtot"><span class="jk">得分 / 已答满分</span><span class="jv num '+(g.score>0?'pos':(g.score<0?'neg':'zero'))+'">'+signed(g.score)+' / '+g.maxScore+'</span></div>'
+      +'<div class="jrow"><span class="jk">得分率</span><span class="jv num">'+pctOf(g.rate)+'</span></div>'
+      +'<div class="jrow"><span class="jk">覆盖</span><span class="jv num">'+g.coverage+' / '+g.denom+'</span></div>'
+      +'<div class="jrow"><span class="jk">已答层数</span><span class="jv num">'+g.layersDone+' / 6</span></div>'
+      +'<div class="jrow"><span class="jk">卷面完成度</span><span class="jv num">'+pctOf(g.completion)+'</span></div>';
     var gveto=g.vetoes.length
       ?'<div class="jrow jveto"><span class="jk">否决来源</span><span class="jv">'+esc(g.vetoes.join('；'))+'</span></div>'
       :'<div class="jrow"><span class="jk">否决来源</span><span class="jv muted">未命中</span></div>';
     var gper=g.rows.map(function(r){
         return '<div class="jrow"><span class="jk">第 '+r.layerNo+' 层 · '+esc(r.title)+'</span>'
-          +'<span class="jv'+(r.state==='bad'?' neg':'')+'">'+STATE_LABEL[r.state]+' · '+signed(r.score)+'</span></div>';
-      }).join('')
-      +(window.LAYERS||[]).filter(function(l){return g.rows.every(function(r){return r.layerNo!==l.no;});})
-        .map(function(l){return '<div class="jrow"><span class="jk">第 '+l.no+' 层 · '+esc(l.title)+'</span><span class="jv muted">未答</span></div>';}).join('');
-    var gfull=g.layersDone<6
-      ?'已答 '+g.layersDone+'/6 层（覆盖 '+g.coverage+'/'+g.denom+' 个维度），先按现有证据给结论，其余层补齐后再看。'
-      :gph.full;
-    var gconcl='<div class="jfull">'+esc(gfull)+'</div>'
+          +'<span class="jv num">已答 '+r.answered+'/'+r.denom+' · '+signed(r.score)+'/'+r.maxScore+'</span></div>';
+      }).join('');
+    var gnote=g.state==='unknown'
+      ?'<div class="jnudge">卷面 '+pctOf(g.completion)+'，不到 34%，结论仅供参考。</div>'
+      :(g.thin?'<div class="jnudge">卷面 '+pctOf(g.completion)+'，证据偏薄，结论先参考。</div>':'');
+    var gconcl='<div class="jfull">'+esc(gph.full)+'</div>'+gnote
       +'<div class="jtagline"><span class="jtag '+g.state+'">'+gnat+'</span></div>'
       +'<div class="jrow jkv"><span class="jk">该干嘛</span><span class="jv">'+esc(gph.act+'：'+gph.pos)+'</span></div>'
       +'<div class="jrow jkv"><span class="jk">止损</span><span class="jv">'+esc(gph.stop)+'</span></div>'
       +'<div class="jrow jkv"><span class="jk">改口条件</span><span class="jv">'+esc(gph.flip)+'</span></div>';
     if(vScope==='index'){
-      return '<div class="jsec"><h4>合计 · 各层结论</h4>'
+      return '<div class="jsec"><h4>各层进度</h4>'
         +(gper||'<div class="jrow"><span class="jk">六层</span><span class="jv muted">都还没答，无法汇总</span></div>')+'</div>'
-        +'<div class="jsec"><h4>合计分与覆盖度</h4>'+gtot+gveto+'</div>'
+        +'<div class="jsec"><h4>总成绩 · 全部六层</h4>'+gtot+gveto+'</div>'
         +'<div class="jsec"><h4>结论</h4>'+gconcl+'</div>';
     }
-    var lay=layerById(v.layerId)||layer;
-    var wmap={};v.rows.forEach(function(r){wmap[r.node]=r;});
+    var lay=layerById((v&&v.layerId)||'')||layer;
+    var lv=lay?verdictOf(state.answers, lay.id):{score:0,maxScore:0,rate:0.5,coverage:0,denom:1,rows:[],vetoes:[]};
+    var wmap={};lv.rows.forEach(function(r){wmap[r.node]=r;});
     var chips=[];
     if(state.mode&&state.history.length) chips.push('<span class="jp-chip mode">'+esc(modeLabel())+'</span>');
     state.history.forEach(function(h){
-      var r=wmap[h.node]||{},w=r.w||0,veto=!!r.veto,cls=veto?'veto':(w>0?'pos':(w<0?'neg':'zero'));
+      var r=wmap[h.node]||{},eff=r.eff||0,veto=!!r.veto,cls=veto?'veto':(eff>0?'pos':(eff<0?'neg':'zero'));
       chips.push('<span class="jp-chip'+(veto?' veto':'')+'"><span class="jpt" aria-hidden="true">'+(veto?'!':'✓')+'</span>'
-        +esc(h.short)+' · <b>'+esc(h.label)+'</b><i class="jpw '+cls+'">'+(veto?'veto':(w>0?'+'+w:''+w))+'</i></span>');
+        +esc(h.short)+' · <b>'+esc(h.label)+'</b><i class="jpw '+cls+'">'+(veto?'−6':(eff>0?'+'+eff:''+eff))+'</i></span>');
     });
     if(!chips.length) chips.push('<span class="jp-chip muted">还没走，先选一个入口</span>');
-    var done=v.done||[];
+    var done=(v&&v.done)||[];
     var miss=(lay.entries||[]).filter(function(e){
       return done.indexOf(e.id)<0&&!state.history.some(function(h){return h.entry===e.id;});
     });
@@ -794,13 +820,15 @@
     }else if(state.history.length){
       own+='<div class="jp-miss ok">所有分支都走完了，没有漏项。</div>';
     }
-    own+='<div class="jrow jtot"><span class="jk">本层分</span><span class="jv num '+(v.score>0?'pos':(v.score<0?'neg':'zero'))+'">'+signed(v.score)+'</span></div>'
-      +'<div class="jrow"><span class="jk">本层覆盖</span><span class="jv num">'+v.coverage+' / '+v.denom+'</span></div>'
-      +'<div class="jrow'+(v.vetoes&&v.vetoes.length?' jveto':'')+'"><span class="jk">本层否决</span><span class="jv'+(v.vetoes&&v.vetoes.length?'':' muted')+'">'
-      +(v.vetoes&&v.vetoes.length?esc(v.vetoes.join('；')):'未命中')+'</span></div>';
-    var N=g.maxDone>0?g.maxDone:((lay&&lay.no)||1);
-    return '<div class="jsec"><h4>本层 · 第 '+((lay&&lay.no)||1)+' 层</h4>'+own+'</div>'
-      +'<div class="jsec"><h4>合计 · 含第 1–'+N+' 层</h4>'+gtot+gveto+gper+gconcl+'</div>';
+    var loss=lv.rows.filter(function(r){return r.eff<0;}).map(function(r){
+      var s=(lay.nodes[r.node]||{}).short||r.node;
+      return esc(s)+' '+signed(r.eff)+(r.veto?'（否决）':'');
+    });
+    var lsum='<div class="jsum">本大题走了 '+lv.coverage+'/'+lv.denom+' 小题，得 '+signed(lv.score)+' / 满 '+lv.maxScore
+      +(loss.length?'，丢 '+(lv.maxScore-lv.score)+' 分：'+loss.join('、')+'。':'，没有丢分。')+'</div>';
+    return '<div class="jsec"><h4>本层 · 第 '+((lay&&lay.no)||1)+' 层</h4>'+own+lsum+'</div>'
+      +'<div class="jsec"><h4>总成绩 · 全部六层</h4>'+gtot+gveto+'</div>'
+      +'<div class="jsec"><h4>结论</h4>'+gconcl+'</div>';
   }
   function setExpanded(on){
     document.body.dataset.expanded=on?'true':'false';
