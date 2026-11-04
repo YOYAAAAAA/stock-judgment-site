@@ -6,7 +6,7 @@
   var VERDICT_KEY=PREFIX+'verdict';
   var state={mode:null,entryIndex:0,entryId:null,node:null,phase:'start',answers:{},history:[],doneEntries:[]};
   var layer=null;
-  var stageEl=null,startCard=null,trailEl=null,trailChips=null,progressChip=null,progFill=null;
+  var stageEl=null,startCard=null,progressChip=null,progFill=null;
   var sheetWrap=null,sheetEl=null,sheetGrab=null,sheetTitle=null,sheetBody=null;
   var glossList=null,glossSearch=null,glossEmpty=null;
   var narrowMQ=window.matchMedia('(max-width:599px)');
@@ -247,10 +247,15 @@
       '<div class="progress-card"><div class="progress-main"><div class="progress-num" id="doneNum">0<small> / 6 层</small></div>'
       +'<div class="progress-cap" id="doneCap">还没走完任何一层</div></div>'
       +'<div class="pips" id="pips"></div><button class="progress-reset" type="button" data-reset>重置进度</button></div>'
-      +'<div class="layer-list" id="layerList"></div>'
-      +'<section class="search-panel"><h2 style="font-size:18px;margin:0">搜层或术语</h2>'
-      +'<input class="gloss-search" id="siteSearch" type="search" placeholder="例如：量比、止损、板块阶段" autocomplete="off" aria-label="搜索层次或术语">'
-      +'<div class="search-results" id="termHits"></div></section>';
+      +'<div class="layer-list" id="layerList"></div>';
+    var slot=document.getElementById('nightSlot');
+    if(slot){
+      slot.insertAdjacentHTML('afterbegin',
+        '<section class="search-panel"><h2 style="font-size:18px;margin:0">搜层或术语</h2>'
+        +'<input class="gloss-search" id="siteSearch" type="search" placeholder="例如：量比、止损、板块阶段" autocomplete="off" aria-label="搜索层次或术语">'
+        +'<div class="search-results" id="termHits"></div></section>');
+      document.body.classList.add('has-night');
+    }
     renderIndex();
     var input=document.getElementById('siteSearch');
     input.addEventListener('input',function(){filterIndex(input.value.trim());});
@@ -318,17 +323,16 @@
     root.innerHTML=
       '<div class="hero"><div class="kicker">'+esc(layer.kicker)+'</div><h1>'+esc(layer.title)+'</h1>'
       +'<p class="lede">'+layer.lede+'</p>'+(layer.fig?figHTML(layer.fig):'')+'</div>'
-      +'<div id="startCard"></div><div class="trail" id="trail"><div class="trail-label">这一层走过的路径</div><div class="trail-chips" id="trailChips"></div></div>'
-      +'<div id="stage"></div>'
+      +'<div id="startCard"></div><div id="stage"></div>'
+      +'<div class="night"><div class="night-in">'
       +'<section class="glossary"><div class="gloss-head"><h2>术语表</h2><span class="gloss-sub">这一层出现的词，每个最多三句</span></div>'
       +'<input class="gloss-search" id="glossSearch" type="search" placeholder="搜索术语" autocomplete="off" aria-label="搜索本层术语">'
       +'<dl class="gloss-list" id="glossList"></dl><div class="gloss-empty" id="glossEmpty" hidden>没有这个词。试试别的关键词。</div></section>'
       +'<div class="foot">'+layer.foot+'<br>本页是学习工具，不构成投资建议。</div>'
-      +'<nav class="layer-nav">'+navHTML()+'</nav>';
+      +'<nav class="layer-nav">'+navHTML()+'</nav></div></div>';
+    document.body.classList.add('has-night');
     stageEl=document.getElementById('stage');
     startCard=document.getElementById('startCard');
-    trailEl=document.getElementById('trail');
-    trailChips=document.getElementById('trailChips');
     progressChip=document.getElementById('progressChip');
     progFill=document.getElementById('progFill');
     glossList=document.getElementById('glossList');
@@ -368,8 +372,7 @@
   function render(){
     var started=!!state.mode;
     startCard.hidden=started;
-    trailEl.classList.toggle('on',started);
-    if(!started){stageEl.innerHTML='';setProgress('还没开始',0);applyLayerVerdict();return;}
+    if(!started){stageEl.innerHTML='';setProgress('还没开始',0);applyLayerVerdict();refreshJudge();return;}
     if(state.phase==='q'){
       var total=currentTotal();
       var no=Math.min(state.history.length+1,total);
@@ -379,19 +382,15 @@
     }else{
       setProgress('已完成 '+state.history.length+' 步',1);
     }
-    renderTrail();
     if(state.phase==='q') renderQuestion();
     else if(state.phase==='partial') renderPartial();
     else renderConclusion();
     applyLayerVerdict();
     saveLayerState();
+    refreshJudge();
   }
-  function renderTrail(){
-    var chips=['<span class="trail-chip mode"><b>'+esc(modeLabel())+'</b></span>'];
-    state.history.forEach(function(h){
-      chips.push('<span class="trail-chip"><span class="tick">✓</span>'+esc(h.short)+' · <b>'+esc(h.label)+'</b></span>');
-    });
-    trailChips.innerHTML=chips.join('');
+  function refreshJudge(){
+    if(jOpen&&jBody) jBody.innerHTML=judgePanelHTML();
   }
   function renderQuestion(){
     var node=layer.nodes[state.node];
@@ -500,7 +499,7 @@
     if(act==='back') return back();
     if(act==='restart') return restart();
     if(act==='continue') return continueAll();
-    if(act==='review'){trailEl.scrollIntoView({block:'start'});window.scrollBy(0,-70);return;}
+    if(act==='review'){openJudge();return;}
     if(act==='gloss'){var g=document.querySelector('.glossary');if(g){g.scrollIntoView({block:'start'});setTimeout(function(){glossSearch.focus();},220);}}
   }
   function renderGlossary(){
@@ -726,33 +725,38 @@
         +'<div class="jrow jkv"><span class="jk">改口条件</span><span class="jv">'+esc(ph.flip)+'</span></div>';
     }else{
       var lay=layerById(v.layerId)||layer;
-      if(!v.rows.length){
-        sec1='<div class="jrow"><span class="jk">这一层</span><span class="jv muted">还没开始答</span></div>';
-      }else{
-        sec1=v.rows.map(function(r){
-          return '<div class="jrow"><span class="jk">'+esc((lay.nodes[r.node]||{}).short||r.node)+'</span><span class="jv">'+esc(optLabelOf(lay,r.node,r.opt))+'</span></div>';
-        }).join('');
-      }
+      var wmap={};v.rows.forEach(function(r){wmap[r.node]=r;});
+      var chips=[];
+      if(state.mode&&state.history.length) chips.push('<span class="jp-chip mode">'+esc(modeLabel())+'</span>');
+      state.history.forEach(function(h){
+        var r=wmap[h.node]||{},w=r.w||0,veto=!!r.veto,cls=veto?'veto':(w>0?'pos':(w<0?'neg':'zero'));
+        chips.push('<span class="jp-chip'+(veto?' veto':'')+'"><span class="jpt" aria-hidden="true">'+(veto?'!':'✓')+'</span>'
+          +esc(h.short)+' · <b>'+esc(h.label)+'</b><i class="jpw '+cls+'">'+(veto?'veto':(w>0?'+'+w:''+w))+'</i></span>');
+      });
+      if(!chips.length) chips.push('<span class="jp-chip muted">还没走，先选一个入口</span>');
       var done=v.done||[];
-      sec1+=(lay.entries||[]).filter(function(e){return done.indexOf(e.id)<0;})
-        .map(function(e){return '<div class="jrow"><span class="jk">'+esc(e.label)+'</span><span class="jv muted">未答</span></div>';}).join('');
-      sec2=v.rows.map(function(r){
-        var short=(lay.nodes[r.node]||{}).short||r.node;
-        return '<div class="jrow"><span class="jk">'+esc(short+' · '+optLabelOf(lay,r.node,r.opt))+(r.veto?' <b>veto</b>':'')+'</span>'
-          +'<span class="jv num '+(r.w>0?'pos':(r.w<0?'neg':'zero'))+'">'+(r.w>0?'+':'')+r.w+'</span></div>';
-      }).join('');
+      var miss=(lay.entries||[]).filter(function(e){
+        return done.indexOf(e.id)<0&&!state.history.some(function(h){return h.entry===e.id;});
+      });
+      sec1='<div class="jpath">'+chips.join('')+'</div>';
+      if(miss.length){
+        sec1+='<div class="jp-miss"><b>未答</b>'+miss.map(function(e){
+          return '<span class="jp-miss-i">'+esc(e.mark+' '+e.label)+'</span>';
+        }).join('')+'<span class="jp-miss-n">不计分</span></div>';
+      }else if(state.history.length){
+        sec1+='<div class="jp-miss ok">所有分支都走完了，没有漏项。</div>';
+      }
       sec3='<div class="jfull">'+esc(ph.full)+'</div>'
         +'<div class="jtagline"><span class="jtag '+v.state+'">'+nat+'</span></div>'
         +'<div class="jrow jkv"><span class="jk">该干嘛</span><span class="jv">'+esc(ph.act+'：'+ph.pos)+'</span></div>'
         +'<div class="jrow jkv"><span class="jk">止损</span><span class="jv">'+esc(ph.stop)+'</span></div>'
         +'<div class="jrow jkv"><span class="jk">改口条件</span><span class="jv">'+esc(ph.flip)+'</span></div>';
     }
-    if(!sec2) sec2='<div class="jrow"><span class="jk">合计</span><span class="jv muted">没有作答，无法算分</span></div>';
     var vetoHTML=v.vetoes&&v.vetoes.length
       ?'<div class="jrow jveto"><span class="jk">否决</span><span class="jv">'+esc(v.vetoes.join('；'))+'</span></div>'
       :'<div class="jrow"><span class="jk">否决</span><span class="jv muted">未命中</span></div>';
-    return '<div class="jsec"><h4>选了哪些</h4>'+sec1+'</div>'
-      +'<div class="jsec"><h4>凭什么</h4>'+sec2
+    return '<div class="jsec"><h4>'+(vScope==='index'?'各层结论':'走过的路径')+'</h4>'+sec1+'</div>'
+      +'<div class="jsec"><h4>合计分与覆盖度</h4>'+sec2
       +'<div class="jrow jtot"><span class="jk">合计分</span><span class="jv num">'+(v.score>0?'+':'')+v.score+'</span></div>'
       +'<div class="jrow"><span class="jk">覆盖度</span><span class="jv num">'+v.coverage+' / '+v.denom+'</span></div>'
       +vetoHTML+'</div>'
