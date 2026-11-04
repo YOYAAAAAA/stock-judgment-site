@@ -15,6 +15,27 @@
   function set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
   function getDone(){var v=get(DONE_KEY,{});return v&&typeof v==='object'?v:{};}
   function markDone(id){var d=getDone();d[id]=true;set(DONE_KEY,d);}
+  function stateKey(id){return PREFIX+'state.'+id;}
+  function saveLayerState(){
+    if(!layer) return;
+    if(!state.mode){try{localStorage.removeItem(stateKey(layer.id));}catch(e){}return;}
+    set(stateKey(layer.id),{mode:state.mode,entryIndex:state.entryIndex,entryId:state.entryId,node:state.node,
+      phase:state.phase,answers:state.answers,history:state.history,doneEntries:state.doneEntries});
+  }
+  function clearLayerState(id){try{localStorage.removeItem(stateKey(id));}catch(e){}}
+  function restoreLayerState(){
+    var s=get(stateKey(layer.id),null);
+    if(!s||typeof s!=='object'||s.mode!=='all'&&s.mode!=='single') return false;
+    if(!s.entryId||!entryOf(s.entryId)) return false;
+    if(s.phase!=='q'&&s.phase!=='partial'&&s.phase!=='final') return false;
+    if(s.phase==='q'&&!layer.nodes[s.node]) return false;
+    state.mode=s.mode;state.entryIndex=entryIndex(s.entryId);state.entryId=s.entryId;
+    state.node=s.node||null;state.phase=s.phase;
+    state.answers=(s.answers&&typeof s.answers==='object')?s.answers:{};
+    state.history=Array.isArray(s.history)?s.history:[];
+    state.doneEntries=Array.isArray(s.doneEntries)?s.doneEntries:[];
+    return true;
+  }
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function layerByNo(n){return (window.LAYERS||[]).filter(function(l){return l.no===n;})[0];}
   function entryOf(id){return layer.entries.filter(function(e){return e.id===id;})[0];}
@@ -178,6 +199,45 @@
     });
   }
 
+  /* ---------- 顶部六层切换 ---------- */
+  function initNav(){
+    var right=document.querySelector('.top-right');
+    if(!right||document.getElementById('navDrop')) return;
+    var isLayer=!!(document.body.dataset.layer&&layer);
+    var wrap=document.createElement('div');
+    wrap.className='navdrop';wrap.id='navDrop';
+    wrap.innerHTML='<button class="nav-btn" type="button" id="navBtn" aria-haspopup="true" aria-expanded="false" aria-controls="navMenu">'
+      +'<span id="navBtnLabel">六层</span><i class="nb-caret" aria-hidden="true">▾</i></button>'
+      +'<div class="nav-menu" id="navMenu" role="menu" hidden></div>';
+    right.insertBefore(wrap,right.firstChild);
+    var btn=wrap.querySelector('#navBtn'),menu=wrap.querySelector('#navMenu');
+    function build(){
+      var d=getDone(),dn=0;
+      (window.LAYERS||[]).forEach(function(l){if(d[l.id])dn++;});
+      var rows='<a class="nav-item nav-home" role="menuitem" href="'+(isLayer?'../index.html':'index.html')+'"'+(isLayer?'':' aria-current="page"')+'>'
+        +'<span class="ni-main">六层总览</span><span class="ni-s">已过 '+dn+'/6</span></a>';
+      rows+='<div class="nav-cap">跳到哪一层</div>';
+      (window.LAYERS||[]).forEach(function(l){
+        var st=navStatusOf(l);
+        var cls='nav-item'+(st.done?' done':'')+(st.doing?' doing':'')+(isLayer&&l.id===layer.id?' current':'');
+        rows+='<a class="'+cls+'" role="menuitem" href="'+(isLayer?'layer'+l.no+'.html':'layers/'+l.id+'.html')+'"'
+          +(isLayer&&l.id===layer.id?' aria-current="page"':'')+'>'
+          +'<span class="ni-wrap"><span class="ni-main">第 '+l.no+' 层 · '+st.text+'</span><span class="ni-sub">'+esc(l.title)+'</span></span>'
+          +'</a>';
+      });
+      menu.innerHTML=rows;
+    }
+    function closeMenu(){menu.hidden=true;btn.setAttribute('aria-expanded','false');}
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      if(menu.hidden){build();menu.hidden=false;btn.setAttribute('aria-expanded','true');}
+      else closeMenu();
+    });
+    menu.addEventListener('click',function(){closeMenu();});
+    document.addEventListener('click',function(e){if(!e.target.closest('#navDrop')) closeMenu();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape') closeMenu();});
+  }
+
   /* ---------- 总览 ---------- */
   function initIndex(){
     var app=document.getElementById('siteRoot');
@@ -195,16 +255,26 @@
     var input=document.getElementById('siteSearch');
     input.addEventListener('input',function(){filterIndex(input.value.trim());});
     app.addEventListener('click',function(e){
-      if(e.target.closest('[data-reset]')){set(DONE_KEY,{});set(VERDICT_KEY,{});renderIndex();setProgress('已过 0/6',0);}
+      if(e.target.closest('[data-reset]')){
+        set(DONE_KEY,{});set(VERDICT_KEY,{});
+        (window.LAYERS||[]).forEach(function(l){clearLayerState(l.id);});
+        renderIndex();setProgress('已过 0/6',0);
+      }
     });
+  }
+  function navStatusOf(l){
+    var s=get(stateKey(l.id),null),n=(s&&s.answers)?Object.keys(s.answers).length:0;
+    if(getDone()[l.id]||(s&&s.phase==='final')) return {text:'已完成',done:true};
+    if(n>0) return {text:n+'/'+denomOf(l),done:false,doing:true};
+    return {text:'未开始',done:false};
   }
   function renderIndex(){
     var done=getDone(),n=0,list='';
     (window.LAYERS||[]).forEach(function(l){
-      var isDone=!!done[l.id];if(isDone)n++;
+      var st=navStatusOf(l),isDone=st.done;if(isDone)n++;
       list+='<a class="layer-card" href="layers/'+l.id+'.html" data-text="'+esc((l.no+' '+l.title+' '+l.preview.ask+' '+l.preview.stop).toLowerCase())+'">'
         +'<div class="top"><span class="layer-no">第 '+l.no+' 层</span>'
-        +'<span class="layer-state'+(isDone?' done':'')+'">'+(isDone?'已完成':'未开始')+'</span></div>'
+        +'<span class="layer-state'+(isDone?' done':(st.doing?' doing':''))+'">'+st.text+'</span></div>'
         +'<h3>'+esc(l.title)+'</h3>'
         +'<div class="layer-meta"><span><b>要问</b>'+esc(l.preview.ask)+'</span><span><b>停在哪</b>'+esc(l.preview.stop)+'</span></div>'
         +'<div class="go">'+(isDone?'再走一遍':'进入这一层')+' →</div></a>';
@@ -264,6 +334,7 @@
     glossList=document.getElementById('glossList');
     glossSearch=document.getElementById('glossSearch');
     glossEmpty=document.getElementById('glossEmpty');
+    restoreLayerState();
     renderStart();
     renderGlossary();
     glossSearch.addEventListener('input',function(){
@@ -274,6 +345,7 @@
       glossEmpty.hidden=n>0;
     });
     render();
+    window.scrollTo(0,0);
   }
   function navHTML(){
     var prev=layer.no>1?'<a href="layer'+(layer.no-1)+'.html">← 第 '+(layer.no-1)+' 层</a>':'';
@@ -312,6 +384,7 @@
     else if(state.phase==='partial') renderPartial();
     else renderConclusion();
     applyLayerVerdict();
+    saveLayerState();
   }
   function renderTrail(){
     var chips=['<span class="trail-chip mode"><b>'+esc(modeLabel())+'</b></span>'];
@@ -409,7 +482,7 @@
     render();focusStage();
   }
   function restart(){
-    if(layer) clearVerdict(layer.id);
+    if(layer){clearVerdict(layer.id);clearLayerState(layer.id);}
     state={mode:null,entryIndex:0,entryId:null,node:null,phase:'start',answers:{},history:[],doneEntries:[]};
     render();startCard.hidden=false;window.scrollTo({top:0,behavior:'auto'});
   }
@@ -715,6 +788,7 @@
     ensureVerdictDOM();
     bindGlobalClick();
     if(document.body.dataset.page==='index') initIndex();
-    else if(document.body.dataset.layer) initLayer();
+    else if(document.body.dataset.layer){initLayer();}
+    initNav();
   });
 })();
