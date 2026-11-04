@@ -457,7 +457,10 @@
     var node=layer.nodes[nodeKey];if(!node) return;
     var opt=node.options.filter(function(o){return o.k===optKey;})[0];if(!opt) return;
     state.answers[nodeKey]=optKey;
-    state.history.push({node:nodeKey,opt:optKey,label:opt.label,short:node.short,entry:state.entryId});
+    var hi=-1;
+    for(var i=0;i<state.history.length;i++){ if(state.history[i].node===nodeKey){hi=i;break;} }
+    var rec={node:nodeKey,opt:optKey,label:opt.label,short:node.short,entry:state.entryId};
+    if(hi>-1) state.history[hi]=rec; else state.history.push(rec);
     if(opt.next==='END'){finishEntry();}
     else{state.node=opt.next;}
     render();focusStage();
