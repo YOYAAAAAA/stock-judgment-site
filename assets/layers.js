@@ -307,8 +307,8 @@ partial:function(id,a){
 checks:function(a){
  return [
  {t:'带动有宽度',d:(a.a2?a.a2:'')||(a.a3?a.a3:'')?'已查第 2、3 步':'还没查',s:(a.a2==='narrow'||a.a3==='failed')?'bad':((a.a2==='broad')?'ok':'unk')},
- {t:'资金在跟',d:a.b1?('成交额：'+a.b1):'还没查',s:(a.b1==='down'||a.b2==='low')?'bad':((a.b1==='up'||a.b2==='high')?'ok':'unk')},
- {t:'量价配合',d:a.b3?a.b3:'还没查',s:a.b3==='upVol'?'ok':(a.b3==='downVol'?'bad':'unk')}
+ {t:'资金在跟',d:a.b1?('成交额：'+optText(this,'b1',a.b1)):'还没查',s:(a.b1==='down'||a.b2==='low')?'bad':((a.b1==='up'||a.b2==='high')?'ok':'unk')},
+ {t:'量价配合',d:a.b3?optText(this,'b3',a.b3):'还没查',s:a.b3==='upVol'?'ok':(a.b3==='downVol'?'bad':'unk')}
  ];
 },
 verdict:function(a){
@@ -928,5 +928,106 @@ verdict:function(a){
 foot:'来源锚定：风险预算与组合风险（Jorion《Value at Risk》，教材方法）；风险与回报、分散（Brealey《Principles of Corporate Finance》，学术共识）；交易执行纪律属业内经验，仅作参考，不作必答依据。'
 });
 
-/*__LAYERS_MORE__*/
+function optText(lay,nodeKey,optKey){
+ var n=lay&&lay.nodes&&lay.nodes[nodeKey];if(!n||!optKey) return optKey||'';
+ var o=n.options.filter(function(x){return x.k===optKey;})[0];
+ return o?o.label:optKey;
+}
+/* ============================================================
+   判断引擎数据：每个选项的权重（-2..+2）与 veto 标记。
+   权重含义：正 = 支持动手，负 = 不支持；veto = 一票否决，直接落绿。
+   覆盖度 = 本层已答节点数；本层满答步数无常量，运行时按 entries 求和。
+   ============================================================ */
+window.JUDGE={
+layers:{
+ layer1:{
+  w:{a1:{white:0,yellow:1,flat:0},
+     a2:{broad:2,narrow:-1,mixed:0},
+     a3:{broad:2,one:1,failed:-2},
+     b1:{up:2,flat:0,down:-2},
+     b2:{high:1,mid:0,low:-1},
+     b3:{upVol:2,upNo:-1,downVol:-2,downNo:0}},
+  veto:{'b3.downVol':'放量下跌，资金在出逃'}
+ },
+ layer2:{
+  w:{s1:{fresh:1,mid:2,late:-3},
+     s2_fresh:{new:2,old:-1,rumor:-2},
+     s2_mid:{broad:2,split:-1,weak:-2},
+     s2_late:{fallen:-2,flat:0,handoff:1},
+     s3:{expand:2,flat:0,shrink:-2},
+     f1:{up:2,flat:0,down:-2},
+     f2_up:{inflow:2,rotation:0,outflow:-2},
+     f2_mid:{focus:-1,diffuse:2,unclear:0},
+     f2_down:{short:0,config:-2,unknown:-1},
+     f3:{sealed:2,open:0,broken:-2}},
+  veto:{'s1.late':'已进退潮期','s2_fresh.rumor':'只有传闻，找不到原文','f3.broken':'炸板未回封，情绪转退潮','f2_up.outflow':'净流出，龙头放量下跌','f2_down.config':'放量下跌，配置资金也在撤'}
+ },
+ layer3:{
+  w:{p1:{up:2,range:0,down:-3},
+     p2_up:{hold:2,brief:1,break:-2},
+     p2_range:{upper:-1,middle:0,lower:1},
+     p2_down:{rejected:-2,newlow:-2,base:1},
+     p3:{close:-2,mid:0,far:2},
+     r1:{strong:2,flat:0,weak:-2},
+     r2_strong:{leader:2,inline:1,laggard:-1},
+     r2_flat:{resilient:2,follow:0,fragile:-1},
+     r2_weak:{leads:2,lags:-1,none:-2},
+     r3:{aligned:2,conflict:-1,neutral:0}},
+  veto:{'p1.down':'均线向下、价格在均线下方','p2_up.break':'放量跌破支撑，趋势破坏'}
+ },
+ layer4:{
+  w:{v1:{newHighVol:2,newHighShrink:-1,fallVol:-3},
+     v2a:{day:2,next:1,late:-1},
+     v2b:{still:1,stall:-1,roll:-2},
+     v2c:{high:-2,mid:-2,low:1},
+     i1:{alignedUp:2,alignedDown:-2,against:-2},
+     i2:{hot:-1,neutral:1,cold:-1},
+     t1:{bothUp:2,conflict:-1,bothDown:-2},
+     t2:{same:2,conflict:-1}},
+  veto:{'v1.fallVol':'放量下跌，资金先撤','v2b.roll':'缩量新高后回落，背离兑现','v2c.high':'高位放量破位','i1.against':'价格与 MACD 明显背离'}
+ },
+ layer5:{
+  w:{c1:{above:2,near:0,below:-2},
+     c2:{many:-2,few:1,unclear:0},
+     e1:{greater:2,near:1,lower:-2},
+     e2:{faster:-2,same:0,slower:1},
+     l1:{low:2,mid:0,high:-2},
+     l2:{long:2,mid:0,short:-2}},
+  veto:{'e1.lower':'经营现金流明显低于净利润，利润没有现金撑','e2.faster':'应收增速快于收入，疑似赊账换收入','l2.short':'现金跑道不足 6 个月'}
+ },
+ layer6:{
+  w:{s1:{technical:2,event:1,chase:-2},
+     s2:{structure:2,fixed:0,none:-3},
+     s3:{execute:2,add:-3,wait:-2},
+     z1:{one:2,two:0,five:-2},
+     z2:{formula:2,feel:-1,full:-3},
+     p1:{low:2,mid:0,high:-2},
+     p2:{low:2,some:0,high:-2}},
+  veto:{'s2.none':'没有止损，风险不可控','s3.add':'止损触发后加仓摊平','s3.wait':'止损触发后不执行','z2.full':'满仓，一次错误可能结束游戏','p2.high':'几乎同一方向，是假分散'}
+ }
+},
+phrase:{
+ layer1:{good:{main:'量价齐升',nat:'有利',act:'买',full:'量价齐升、带动有宽度：今天的环境支持继续看个股。',pos:'首笔三成以内，个股仍要单独验证',stop:'指数跌破 5 日线就收手',flip:'量比回落到 1.0 以下，或涨跌家数转空'},
+         neutral:{main:'方向未明',nat:'观望',act:'等',full:'方向未明：带动或量能有一项没确认。',pos:'不新开仓，先观察',stop:'没有仓位，不设止损',flip:'量能回到 1.2 以上且涨跌家数转多'},
+         bad:{main:'量增下杀',nat:'不利',act:'空',full:'量增下杀或带动偏假：今天的环境不支持动手。',pos:'空仓，最多留底仓',stop:'已有仓位跌破前低就走',flip:'缩量止跌且涨跌家数转多'}},
+ layer2:{good:{main:'主线接力',nat:'有利',act:'买',full:'主线在接力：阶段未退潮、资金在进、龙头封住。',pos:'只做龙头或最强二线，三成以内',stop:'龙头炸板未回封就退',flip:'板块成交额占比回落，或龙头开板'},
+         neutral:{main:'阶段未明',nat:'观望',act:'等',full:'阶段未明：位置或资金有一项没确认。',pos:'不接力，等第二天确认',stop:'没有仓位，不设止损',flip:'次日龙头继续封板且占比上升'},
+         bad:{main:'题材退潮',nat:'不利',act:'空',full:'题材退潮：资金在撤，接力已断。',pos:'不参与，已有仓位先减',stop:'跌破 5 日线清掉',flip:'新龙头接棒并放量'}},
+ layer3:{good:{main:'位置合格',nat:'有利',act:'买',full:'位置合格：趋势向上、相对强、离压力有空间。',pos:'进观察池，不追高，回踩再买',stop:'跌破 20 日线',flip:'相对强弱转弱，或跌回区间内'},
+         neutral:{main:'位置居中',nat:'观望',act:'等',full:'位置居中：趋势、强弱或距离有一项没确认。',pos:'等突破回踩确认再动',stop:'没有仓位，不设止损',flip:'放量突破前高并回踩守住'},
+         bad:{main:'破位下行',nat:'不利',act:'空',full:'破位下行：趋势或位置不合格。',pos:'不碰，放在观察池外',stop:'已持仓反弹到均线就减',flip:'站回 60 日线且相对转强'}},
+ layer4:{good:{main:'三项共振',nat:'有利',act:'买',full:'三项共振：量价、指标、周期都指向同一方向。',pos:'可按信号做，首笔三成，止损放结构下方',stop:'放量跌破突破位',flip:'MACD 背离，或周期转空'},
+         neutral:{main:'只差一项',nat:'观望',act:'等',full:'只差一项：共振不完整，只能当参考。',pos:'只记录，不当依据',stop:'没有仓位，不设止损',flip:'缺的那一项补上（量能或周期）'},
+         bad:{main:'信号打架',nat:'不利',act:'空',full:'信号打架：量价或指标不支持。',pos:'不参与，已持仓先退',stop:'跌破最近一根放量 K 线低点',flip:'放量收复前高且 MACD 金叉'}},
+ layer5:{good:{main:'质地过关',nat:'有利',act:'持',full:'质地过关：现金含量、筹码位置、杠杆三项都过关。',pos:'可以深入，仓位等买点再定',stop:'现金流恶化或杠杆抬升就退出研究',flip:'应收增速超过收入'},
+         neutral:{main:'证据不足',nat:'观望',act:'等',full:'证据不足：筹码或利润质量有一项没查清。',pos:'只做研究，不下单',stop:'没有仓位，不设止损',flip:'补齐筹码与现金流两项'},
+         bad:{main:'利润存疑',nat:'不利',act:'减',full:'利润存疑或上方套牢重：先别按高增长估值。',pos:'不参与，已有仓位先减',stop:'反弹到筹码峰就减',flip:'经营现金流回到净利润之上'}},
+ layer6:{good:{main:'计划成立',nat:'有利',act:'持',full:'计划成立：止损、仓位、组合三项都过关。',pos:'按风险预算 ÷ 止损距离算出的仓位执行',stop:'结构下方留缓冲，触发即走',flip:'止损触发，或同向暴露超过 40%'},
+         neutral:{main:'还差一项',nat:'观望',act:'等',full:'还差一项：退出、仓位或组合暴露没定。',pos:'补齐之前不下单',stop:'没有仓位，不设止损',flip:'三项齐了再下单'},
+         bad:{main:'规则缺失',nat:'不利',act:'减',full:'规则缺失：没有可执行的止损，或仓位过重。',pos:'不下单，先把仓位减到风险预算内',stop:'先写出结构止损，再谈买入',flip:'止损与仓位都写成可执行规则'}},
+ index:{good:{main:'六层通关',nat:'有利',act:'买',full:'六层通关：环境、板块、位置、共振、质量、仓位都过。',pos:'按第六层算出的仓位执行',stop:'任一层转弱就退回上一层',flip:'任一层出现否决'},
+        neutral:{main:'半数通过',nat:'观望',act:'等',full:'半数通过：有层还没走完，或结论中性。',pos:'只做观察，不新开仓',stop:'没有仓位，不设止损',flip:'六层都过，或出现否决'},
+        bad:{main:'有层不通',nat:'不利',act:'空',full:'有层不通：至少一层给了否决。',pos:'空仓，或先减到风险预算内',stop:'按各层写好的止损执行',flip:'否决项消除'}}
+}
+};
 })();

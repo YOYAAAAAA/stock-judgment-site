@@ -292,4 +292,119 @@ h2.q-title{font-size:clamp(19.5px,4.6vw,23px);line-height:1.4;letter-spacing:-.0
   .sheet{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px)}
   .progress-card,.start-card{margin-top:16px}
 }
+/* ============================================================
+   四态色面判断：红块贴顶 / 绿块贴底 / 黄块贴底 / 整屏蓝
+   色块在导航之下、内容之上，不吃点击；接缝固定 64px 同色 alpha 渐隐。
+   ============================================================ */
+:root{--navH:56px;--blockH:clamp(132px,20vh,240px);--fade:64px;--vmix:68%;--blk:143 42 29;--blueBg:#eaf1fb}
+body[data-strength="1"]{--vmix:14%}
+body[data-strength="2"]{--vmix:38%}
+body[data-strength="3"]{--vmix:68%}
+body[data-verdict="good"]{--blk:143 42 29}
+body[data-verdict="bad"]{--blk:28 82 58}
+body[data-verdict="neutral"]{--blk:227 196 106;--kB:#e3c46a}
+body[data-verdict="neutral"][data-strength="1"]{--kB:#f2e3b6}
+body[data-verdict="neutral"][data-strength="3"]{--kB:#cfa53f}
+body[data-verdict="unknown"]{--blueBg:#eaf1fb}
+body[data-verdict="unknown"]{background:var(--blueBg)}
+.vblock{position:fixed;left:0;right:0;height:var(--blockH);z-index:18;display:none;pointer-events:none;overflow:hidden}
+body[data-verdict="good"] .vblock{display:block;top:var(--navH);
+  background:linear-gradient(180deg,rgba(var(--blk),var(--vmix)) 0,rgba(var(--blk),var(--vmix)) calc(100% - var(--fade)),rgba(var(--blk),0) 100%)}
+body[data-verdict="bad"] .vblock{display:block;bottom:0;
+  background:linear-gradient(0deg,rgba(var(--blk),var(--vmix)) 0,rgba(var(--blk),var(--vmix)) calc(100% - var(--fade)),rgba(var(--blk),0) 100%)}
+body[data-verdict="neutral"] .vblock{display:block;bottom:0;
+  background:linear-gradient(0deg,var(--kB) 0,var(--kB) calc(100% - var(--fade)),transparent 100%)}
+@supports (color:color-mix(in srgb,#000 50%,#fff)){
+  body[data-verdict="good"] .vblock{
+    background:linear-gradient(180deg,color-mix(in srgb,rgb(var(--blk)) var(--vmix),var(--bg)) 0,
+      color-mix(in srgb,rgb(var(--blk)) var(--vmix),var(--bg)) calc(100% - var(--fade)),transparent 100%)}
+  body[data-verdict="bad"] .vblock{
+    background:linear-gradient(0deg,color-mix(in srgb,rgb(var(--blk)) var(--vmix),var(--bg)) 0,
+      color-mix(in srgb,rgb(var(--blk)) var(--vmix),var(--bg)) calc(100% - var(--fade)),transparent 100%)}
+}
+.vbig{pointer-events:auto;display:inline-flex;align-items:baseline;gap:2px;max-width:100%;white-space:nowrap;cursor:pointer;
+  background:none;border:0;padding:4px 2px;font-family:var(--font);font-weight:700;letter-spacing:-.02em;
+  font-size:clamp(26px,11.2vw,52px);line-height:1.1;color:#3a1512;text-align:center}
+.vbig .vnature{font-size:.58em;font-weight:600;letter-spacing:0;opacity:.94}
+.vbig .vhint{font-size:.24em;opacity:.42;margin-left:5px;font-weight:400}
+body[data-verdict="bad"] .vbig{color:#0d2418}
+body[data-verdict="neutral"] .vbig{color:#241d0c}
+body[data-strength="3"]:not([data-verdict="neutral"]) .vbig{color:#fff}
+.vbig-fix{position:fixed;left:0;right:0;z-index:19;display:none;text-align:center;white-space:nowrap;
+  height:calc(var(--blockH) - var(--fade) - 12px);line-height:calc(var(--blockH) - var(--fade) - 12px);
+  padding:0 24px;margin:0;background:none;border:0;border-radius:0;max-width:none}
+body[data-verdict="good"] .vbig-fix{display:block;top:var(--navH);bottom:auto}
+body[data-verdict="bad"] .vbig-fix,body[data-verdict="neutral"] .vbig-fix{display:block;top:auto;bottom:0}
+.vthin{position:fixed;left:0;right:0;top:var(--navH);height:16px;z-index:17;display:none;pointer-events:none}
+body[data-verdict="unknown"] .vthin{display:block}
+.vthin i{display:block;height:16px;
+  background:linear-gradient(180deg,rgba(10,79,163,.8) 0,rgba(10,79,163,.8) 8px,rgba(10,79,163,0) 100%)}
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(24px + env(safe-area-inset-bottom));
+  z-index:17;pointer-events:none;background:linear-gradient(to top,var(--bg) 0,transparent 100%)}
+body[data-verdict="bad"]::after{background:linear-gradient(to top,rgb(var(--blk) / var(--vmix)) 0,transparent 100%)}
+body[data-verdict="neutral"]::after{background:linear-gradient(to top,var(--kB) 0,transparent 100%)}
+body[data-verdict="unknown"]::after{background:linear-gradient(to top,var(--blueBg) 0,transparent 100%)}
+#vblue{display:none;padding:18px 0 2px}
+body[data-verdict="unknown"] #vblue{display:block}
+.vblue-btn{white-space:normal;text-align:left;color:var(--text);font-size:clamp(26px,10.4vw,46px);display:flex;flex-wrap:wrap;align-items:baseline}
+.vnote{margin:6px 0 0;font-size:12px;line-height:1.65;color:var(--text-2)}
+body[data-verdict="good"] .wrap{padding-top:calc(var(--blockH) + 18px)}
+body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom:calc(var(--blockH) + 42px + env(safe-area-inset-bottom))}
+
+/* 判断浮层：红块（大字在顶上）从顶部下拉；黄/绿/蓝从底部上拉 */
+.jwrap{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
+.jwrap[hidden]{display:none}
+.jmask{position:absolute;inset:0;background:rgba(0,0,0,.34)}
+.jsheet{position:relative;width:100%;max-width:720px;max-height:80vh;max-height:80dvh;display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--line);border-radius:20px 20px 0 0;
+  padding:0 20px calc(18px + env(safe-area-inset-bottom));transform:translateY(102%);
+  transition:transform .28s var(--ease)}
+.jwrap.on .jsheet{transform:translateY(0)}
+.jwrap.top{align-items:flex-start}
+.jwrap.top .jsheet{border-radius:0 0 20px 20px;transform:translateY(-102%);
+  padding:calc(12px + env(safe-area-inset-top)) 20px 18px}
+.jwrap.top.on .jsheet{transform:translateY(0)}
+.jgrab{height:26px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:grab;flex:none}
+.jgrab span{width:38px;height:4px;border-radius:2px;background:var(--line-2)}
+.jwrap.top .jgrab{order:2}
+.jhead{display:flex;align-items:center;gap:10px;flex:none}
+.jhead h3{margin:0;font-size:17px;font-weight:600}
+.jx{margin-left:auto;min-width:44px;min-height:44px;border-radius:12px;color:var(--text-2);font-size:14px}
+.jx:active{background:var(--surface-2)}
+.jbody{overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:2px 0 6px}
+.jsec h4{margin:14px 0 6px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);font-weight:600}
+.jrow{display:flex;gap:12px;align-items:baseline;padding:8px 12px;border:1px solid var(--line);
+  border-radius:10px;margin:0 0 6px;font-size:13.5px;line-height:1.6}
+.jrow .jk{color:var(--text-2);flex:1 1 auto;min-width:0}
+.jrow .jv{color:var(--text);font-weight:600;text-align:right;flex:0 0 auto;max-width:52%}
+.jrow .jv.muted{color:var(--text-3);font-weight:400}
+.jv.num{font-variant-numeric:tabular-nums}
+.jv.pos{color:var(--accent)}
+.jv.neg{color:var(--up)}
+.jrow.jtot{border-style:dashed}
+.jrow.jveto .jv{color:var(--up)}
+.jfull{font-size:14.5px;line-height:1.75;color:var(--text);margin:2px 0 10px}
+.jtagline{margin:0 0 10px}
+.jtag{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--surface-2);color:var(--text-2)}
+.jtag.good{color:var(--up)}
+.jtag.bad{color:var(--down)}
+.jtag.neutral{color:var(--wy)}
+.jtag.unknown{color:var(--accent)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--blueBg:#0d1622}
+  :root:not([data-theme="light"]) body[data-verdict="good"]{--blk:181 72 58}
+  :root:not([data-theme="light"]) body[data-verdict="bad"]{--blk:47 125 94}
+  :root:not([data-theme="light"]) body[data-verdict="neutral"]{--blk:224 192 112}
+  :root:not([data-theme="light"]) body[data-verdict="good"] .vbig,
+  :root:not([data-theme="light"]) body[data-verdict="bad"] .vbig{color:#fff}
+  :root:not([data-theme="light"]) body[data-verdict="neutral"] .vbig{color:#241d0c}
+  :root:not([data-theme="light"]) .jsheet{background:#1c1c1e}
+}
+:root[data-theme="dark"]{--blueBg:#0d1622}
+:root[data-theme="dark"] body[data-verdict="good"]{--blk:181 72 58}
+:root[data-theme="dark"] body[data-verdict="bad"]{--blk:47 125 94}
+:root[data-theme="dark"] body[data-verdict="neutral"]{--blk:224 192 112}
+:root[data-theme="dark"] body[data-verdict="good"] .vbig,
+:root[data-theme="dark"] body[data-verdict="bad"] .vbig{color:#fff}
+:root[data-theme="dark"] body[data-verdict="neutral"] .vbig{color:#241d0c}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}

@@ -3,6 +3,7 @@
   var PREFIX='stock6.v1.';
   var THEME_KEY=PREFIX+'theme';
   var DONE_KEY=PREFIX+'done';
+  var VERDICT_KEY=PREFIX+'verdict';
   var state={mode:null,entryIndex:0,entryId:null,node:null,phase:'start',answers:{},history:[],doneEntries:[]};
   var layer=null;
   var stageEl=null,startCard=null,trailEl=null,trailChips=null,progressChip=null,progFill=null;
@@ -194,7 +195,7 @@
     var input=document.getElementById('siteSearch');
     input.addEventListener('input',function(){filterIndex(input.value.trim());});
     app.addEventListener('click',function(e){
-      if(e.target.closest('[data-reset]')){set(DONE_KEY,{});renderIndex();setProgress('已过 0/6',0);}
+      if(e.target.closest('[data-reset]')){set(DONE_KEY,{});set(VERDICT_KEY,{});renderIndex();setProgress('已过 0/6',0);}
     });
   }
   function renderIndex(){
@@ -216,6 +217,7 @@
     }
     setProgress('已过 '+n+'/6',n/6);
     var input=document.getElementById('siteSearch');if(input&&input.value.trim()) filterIndex(input.value.trim());
+    applyIndexVerdict();
   }
   function filterIndex(q){
     var cards=document.querySelectorAll('#layerList .layer-card'),shown=0;
@@ -295,7 +297,7 @@
     var started=!!state.mode;
     startCard.hidden=started;
     trailEl.classList.toggle('on',started);
-    if(!started){stageEl.innerHTML='';setProgress('还没开始',0);return;}
+    if(!started){stageEl.innerHTML='';setProgress('还没开始',0);applyLayerVerdict();return;}
     if(state.phase==='q'){
       var total=currentTotal();
       var no=Math.min(state.history.length+1,total);
@@ -309,6 +311,7 @@
     if(state.phase==='q') renderQuestion();
     else if(state.phase==='partial') renderPartial();
     else renderConclusion();
+    applyLayerVerdict();
   }
   function renderTrail(){
     var chips=['<span class="trail-chip mode"><b>'+esc(modeLabel())+'</b></span>'];
@@ -406,6 +409,7 @@
     render();focusStage();
   }
   function restart(){
+    if(layer) clearVerdict(layer.id);
     state={mode:null,entryIndex:0,entryId:null,node:null,phase:'start',answers:{},history:[],doneEntries:[]};
     render();startCard.hidden=false;window.scrollTo({top:0,behavior:'auto'});
   }
@@ -439,9 +443,276 @@
     glossList.innerHTML=items;
   }
 
+  /* ---------- 四态色面判断 ---------- */
+  var vWrapEl=null,vBlock=null,vBlue=null,vBig=null,vBig2=null,jWrap=null,jSheet=null,jBody=null,jGrab=null;
+  var vData=null,vScope='layer',jDir='bottom',jOpen=false;
+
+  function layerById(id){return (window.LAYERS||[]).filter(function(l){return l.id===id;})[0];}
+  function denomOf(l){return l?l.entries.reduce(function(n,e){return n+e.steps;},0):6;}
+  function getVerdicts(){var v=get(VERDICT_KEY,{});return v&&typeof v==='object'?v:{};}
+  function saveVerdict(id,v){
+    var all=getVerdicts();
+    all[id]={state:v.state,strength:v.strength,score:v.score,coverage:v.coverage,denom:v.denom,veto:!!v.veto};
+    set(VERDICT_KEY,all);
+  }
+  function clearVerdict(id){
+    var all=getVerdicts();
+    if(all[id]){delete all[id];set(VERDICT_KEY,all);}
+  }
+  function verdictOf(answers,layerId){
+    var J=window.JUDGE&&window.JUDGE.layers[layerId];
+    var lay=layerById(layerId);
+    var denom=denomOf(lay);
+    if(!J||!lay) return {layerId:layerId,score:0,coverage:0,denom:denom,state:'unknown',strength:2,rows:[],vetoes:[],veto:false};
+    var score=0,rows=[],vetoes=[];
+    Object.keys(answers||{}).forEach(function(k){
+      var ok=answers[k];if(!ok) return;
+      var w=(J.w[k]&&J.w[k][ok]);if(typeof w!=='number') w=0;
+      var v=J.veto[k+'.'+ok]||null;
+      score+=w;
+      rows.push({node:k,opt:ok,w:w,veto:v});
+      if(v) vetoes.push(v);
+    });
+    var coverage=Math.min(rows.length,denom);
+    var st=coverage<3?'unknown':(vetoes.length?'bad':(score>=4?'good':(score<=-4?'bad':'neutral')));
+    var sg=st==='unknown'?2:(vetoes.length?3:(Math.abs(score)>=7?3:(Math.abs(score)>=3?2:1)));
+    return {layerId:layerId,score:score,coverage:coverage,denom:denom,state:st,strength:sg,rows:rows,vetoes:vetoes,veto:!!vetoes.length};
+  }
+  function verdictOfIndex(){
+    var vs=getVerdicts(),cov=0,total=0,veto=false,judged=[],i;
+    for(i=0;i<(window.LAYERS||[]).length;i++){
+      var l=window.LAYERS[i],v=vs[l.id];
+      if(!v||v.coverage<3) continue;
+      cov++;
+      total+=v.state==='good'?1:(v.state==='bad'?-1:0);
+      if(v.veto) veto=true;
+      judged.push({layer:l,v:v});
+    }
+    var st=cov<3?'unknown':(veto?'bad':(total>=2?'good':(total<=-2?'bad':'neutral')));
+    var sg=veto?3:(Math.abs(total)>=4?3:(Math.abs(total)>=2?2:1));
+    var rows=judged.map(function(j){
+      return {layerNo:j.layer.no,title:j.layer.title,state:j.v.state,score:j.v.score,veto:!!j.v.veto};
+    });
+    return {layerId:'index',score:total,coverage:cov,denom:6,state:st,strength:sg,rows:rows,judged:judged,vetoes:veto?['有一层命中否决']:[],veto:veto};
+  }
+  function phraseOf(key,st,v){
+    if(st==='unknown'){
+      var cov=v?('已答 '+v.coverage+'/'+v.denom+' 步'):'';
+      return {main:'还没看出来',nat:'未判',act:'等',
+        full:(key==='index'?'六层里还凑不满三层结论':'这一层还没答到 3 步')+(cov?'：'+cov+'，先不下结论。':'。'),
+        pos:'先按未判处理，不新开仓，把没答的步骤补齐',
+        stop:'没有仓位，不设止损',
+        flip:'补到 3 步以上再看颜色；一旦命中否决直接转绿'};
+    }
+    var p=(window.JUDGE&&window.JUDGE.phrase)||{};
+    var set=p[key]||p.index;
+    return set[st]||{main:'还没看出来',nat:'未判',act:'等',
+        full:'还没有这一层的结论文案，先按未判处理。',pos:'不新开仓',stop:'没有仓位，不设止损',flip:'补齐作答后再看'};
+  }
+  function phraseKey(v){return v&&v.layerId&&v.layerId!=='index'?v.layerId:'index';}
+  var STATE_LABEL={good:'有利',bad:'不利',neutral:'观望',unknown:'未判'};
+  var COLOR_LABEL={good:'红',bad:'绿',neutral:'黄',unknown:'蓝'};
+  var STRENGTH_LABEL={1:'浅',2:'中',3:'强'};
+
+  function ensureVerdictDOM(){
+    if(document.getElementById('vWrap')){vWrapEl=document.getElementById('vWrap');return;}
+    vWrapEl=document.createElement('div');vWrapEl.id='vWrap';
+    vWrapEl.innerHTML=
+      '<div class="vblock" id="vblock" aria-hidden="true"></div>'
+      +'<div class="vthin" aria-hidden="true"><i></i></div>'
+      +'<div class="vbig vbig-fix" id="vbig" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false" aria-label="打开这次判断的来路">'
+      +'<span class="vmain"></span><small class="vnature"></small><span class="vhint" aria-hidden="true">›</span></div>';
+    document.body.appendChild(vWrapEl);
+    vBlock=document.getElementById('vblock');
+    vBig=document.getElementById('vbig');
+
+    vBlue=document.createElement('div');vBlue.id='vblue';
+    vBlue.innerHTML='<button class="vbig vblue-btn" id="vbig2" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="打开这次判断的来路">'
+      +'<span class="vmain"></span><small class="vnature"></small><span class="vhint" aria-hidden="true">›</span></button>'
+      +'<p class="vnote" id="vnote"></p>';
+    vBig2=vBlue.querySelector('#vbig2');
+    var main=document.querySelector('.wrap');
+    if(main){
+      var crumbs=main.querySelector('.crumbs');
+      if(crumbs) main.insertBefore(vBlue,crumbs.nextSibling);
+      else main.insertBefore(vBlue,main.firstChild);
+    }
+
+    jWrap=document.createElement('div');jWrap.className='jwrap';jWrap.id='jWrap';jWrap.hidden=true;
+    jWrap.innerHTML='<div class="jmask" data-jclose></div>'
+      +'<div class="jsheet" id="jSheet" role="dialog" aria-modal="true" aria-labelledby="jTitle">'
+      +'<div class="jgrab" id="jGrab"><span></span></div>'
+      +'<div class="jhead"><h3 id="jTitle">这次判断怎么来的</h3><button class="jx" type="button" data-jclose aria-label="关闭">关闭</button></div>'
+      +'<div class="jbody" id="jBody"></div></div>';
+    document.body.appendChild(jWrap);
+    jSheet=document.getElementById('jSheet');
+    jBody=document.getElementById('jBody');
+    jGrab=document.getElementById('jGrab');
+
+    function bindBig(el){
+      if(!el) return;
+      el.addEventListener('click',function(e){e.stopPropagation();openJudge();});
+      el.addEventListener('keydown',function(e){
+        if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();openJudge();}
+      });
+    }
+    bindBig(vBig);bindBig(vBig2);
+
+    document.addEventListener('click',function(e){
+      if(e.target.closest('[data-jclose]')) closeJudge();
+    });
+    document.addEventListener('keydown',function(e){if(e.key==='Escape') closeJudge();});
+    window.addEventListener('resize',function(){
+      var tb=document.querySelector('.topbar');
+      document.documentElement.style.setProperty('--navH',(tb?tb.offsetHeight:56)+'px');
+    });
+
+    var dragY=null,dragDy=0;
+    jGrab.addEventListener('pointerdown',function(e){
+      dragY=e.clientY;dragDy=0;jSheet.style.transition='none';
+      try{jGrab.setPointerCapture(e.pointerId);}catch(err){}
+    });
+    jGrab.addEventListener('pointermove',function(e){
+      if(dragY===null) return;
+      var d=e.clientY-dragY;
+      dragDy=(jDir==='top')?Math.min(0,d):Math.max(0,d);
+      jSheet.style.transform='translateY('+dragDy+'px)';
+    });
+    function endDrag(){
+      if(dragY===null) return;
+      jSheet.style.transition='';
+      if((jDir==='top'&&dragDy<-80)||(jDir==='bottom'&&dragDy>80)){dragY=null;closeJudge();}
+      else{jSheet.style.transform='';dragY=null;}
+    }
+    jGrab.addEventListener('pointerup',endDrag);
+    jGrab.addEventListener('pointercancel',endDrag);
+  }
+
+  function paintVerdict(v,scope){
+    vData=v;vScope=scope;
+    var b=document.body;
+    b.dataset.verdict=v.state;b.dataset.strength=v.strength;
+    var tb=document.querySelector('.topbar');
+    document.documentElement.style.setProperty('--navH',(tb?tb.offsetHeight:56)+'px');
+    var ph=phraseOf(phraseKey(v),v.state,v);
+    var br='（'+ph.nat+'·'+ph.act+'）';
+    [vBig,vBig2].forEach(function(el){
+      if(!el) return;
+      var m=el.querySelector('.vmain'),n=el.querySelector('.vnature');
+      if(m) m.textContent=ph.main;
+      if(n) n.textContent=br;
+      el.setAttribute('aria-expanded','false');
+    });
+    var note=document.getElementById('vnote');
+    if(note){
+      note.textContent=v.coverage>=v.denom
+        ?'六步答完：'+STATE_LABEL[v.state]+' · '+STRENGTH_LABEL[v.strength]+'档。'
+        :'覆盖 '+v.coverage+'/'+v.denom+'，还有 '+(v.denom-v.coverage)+' 步没答。答到 3 步以上才给颜色结论。';
+    }
+  }
+
+  function applyLayerVerdict(){
+    if(!layer) return;
+    var v=verdictOf(state.answers, layer.id);
+    v.done=state.doneEntries.slice();
+    if(v.coverage>0) saveVerdict(layer.id,v); else clearVerdict(layer.id);
+    paintVerdict(v,'layer');
+  }
+  function applyIndexVerdict(){
+    var v=verdictOfIndex();
+    paintVerdict(v,'index');
+  }
+
+  function optLabelOf(lay,nodeKey,optKey){
+    var node=lay.nodes[nodeKey];if(!node) return optKey;
+    var o=(node.options||[]).filter(function(x){return x.k===optKey;})[0];
+    return o?o.label:optKey;
+  }
+  function judgePanelHTML(){
+    var v=vData;if(!v) return '';
+    var ph=phraseOf(phraseKey(v),v.state,v);
+    var nat=STATE_LABEL[v.state]+' · '+COLOR_LABEL[v.state]+' · '+STRENGTH_LABEL[v.strength]+'档';
+    var sec1='',sec2='',sec3='';
+    if(vScope==='index'){
+      if(!v.rows.length){
+        sec1='<div class="jrow"><span class="jk">六层</span><span class="jv muted">都还没答到 3 步，无法汇总</span></div>';
+      }else{
+        sec1=v.rows.map(function(r){
+          return '<div class="jrow"><span class="jk">第 '+r.layerNo+' 层 · '+esc(r.title)+'</span><span class="jv'+(r.state==='bad'?' neg':'')+'">'+STATE_LABEL[r.state]+(r.veto?' · 命中否决':'')+'</span></div>';
+        }).join('');
+      }
+      sec1+=(window.LAYERS||[]).filter(function(l){return v.rows.every(function(r){return r.layerNo!==l.no;});})
+        .map(function(l){return '<div class="jrow"><span class="jk">第 '+l.no+' 层 · '+esc(l.title)+'</span><span class="jv muted">未答</span></div>';}).join('');
+      sec2=v.rows.map(function(r){
+        return '<div class="jrow"><span class="jk">第 '+r.layerNo+' 层</span><span class="jv num '+(r.score>0?'pos':(r.score<0?'neg':'zero'))+'">'+(r.score>0?'+':'')+r.score+'</span></div>';
+      }).join('');
+      sec3='<div class="jfull">'+esc(ph.full)+'</div>'
+        +'<div class="jtagline"><span class="jtag '+v.state+'">'+nat+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">该干嘛</span><span class="jv">'+esc(ph.act+'：'+ph.pos)+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">止损</span><span class="jv">'+esc(ph.stop)+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">改口条件</span><span class="jv">'+esc(ph.flip)+'</span></div>';
+    }else{
+      var lay=layerById(v.layerId)||layer;
+      if(!v.rows.length){
+        sec1='<div class="jrow"><span class="jk">这一层</span><span class="jv muted">还没开始答</span></div>';
+      }else{
+        sec1=v.rows.map(function(r){
+          return '<div class="jrow"><span class="jk">'+esc((lay.nodes[r.node]||{}).short||r.node)+'</span><span class="jv">'+esc(optLabelOf(lay,r.node,r.opt))+'</span></div>';
+        }).join('');
+      }
+      var done=v.done||[];
+      sec1+=(lay.entries||[]).filter(function(e){return done.indexOf(e.id)<0;})
+        .map(function(e){return '<div class="jrow"><span class="jk">'+esc(e.label)+'</span><span class="jv muted">未答</span></div>';}).join('');
+      sec2=v.rows.map(function(r){
+        var short=(lay.nodes[r.node]||{}).short||r.node;
+        return '<div class="jrow"><span class="jk">'+esc(short+' · '+optLabelOf(lay,r.node,r.opt))+(r.veto?' <b>veto</b>':'')+'</span>'
+          +'<span class="jv num '+(r.w>0?'pos':(r.w<0?'neg':'zero'))+'">'+(r.w>0?'+':'')+r.w+'</span></div>';
+      }).join('');
+      sec3='<div class="jfull">'+esc(ph.full)+'</div>'
+        +'<div class="jtagline"><span class="jtag '+v.state+'">'+nat+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">该干嘛</span><span class="jv">'+esc(ph.act+'：'+ph.pos)+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">止损</span><span class="jv">'+esc(ph.stop)+'</span></div>'
+        +'<div class="jrow jkv"><span class="jk">改口条件</span><span class="jv">'+esc(ph.flip)+'</span></div>';
+    }
+    if(!sec2) sec2='<div class="jrow"><span class="jk">合计</span><span class="jv muted">没有作答，无法算分</span></div>';
+    var vetoHTML=v.vetoes&&v.vetoes.length
+      ?'<div class="jrow jveto"><span class="jk">否决</span><span class="jv">'+esc(v.vetoes.join('；'))+'</span></div>'
+      :'<div class="jrow"><span class="jk">否决</span><span class="jv muted">未命中</span></div>';
+    return '<div class="jsec"><h4>选了哪些</h4>'+sec1+'</div>'
+      +'<div class="jsec"><h4>凭什么</h4>'+sec2
+      +'<div class="jrow jtot"><span class="jk">合计分</span><span class="jv num">'+(v.score>0?'+':'')+v.score+'</span></div>'
+      +'<div class="jrow"><span class="jk">覆盖度</span><span class="jv num">'+v.coverage+' / '+v.denom+'</span></div>'
+      +vetoHTML+'</div>'
+      +'<div class="jsec"><h4>结论</h4>'+sec3+'</div>';
+  }
+  function openJudge(){
+    if(!vData||!jWrap) return;
+    jBody.innerHTML=judgePanelHTML();
+    jDir=(vData.state==='good')?'top':'bottom';
+    jWrap.className='jwrap '+jDir;
+    jSheet.style.transition='';jSheet.style.transform='';
+    jWrap.hidden=false;
+    document.body.style.overflow='hidden';
+    if(vBig) vBig.setAttribute('aria-expanded','true');
+    if(vBig2) vBig2.setAttribute('aria-expanded','true');
+    jOpen=true;
+    setTimeout(function(){if(!jWrap.hidden) jWrap.classList.add('on');},20);
+  }
+  function closeJudge(){
+    if(!jWrap||jWrap.hidden) return;
+    jWrap.classList.remove('on');
+    document.body.style.overflow='';
+    jSheet.style.transform='';
+    if(vBig) vBig.setAttribute('aria-expanded','false');
+    if(vBig2) vBig2.setAttribute('aria-expanded','false');
+    jOpen=false;
+    setTimeout(function(){if(!jWrap.classList.contains('on')){jWrap.hidden=true;jSheet.style.transition='';}},300);
+  }
+
   document.addEventListener('DOMContentLoaded',function(){
     initTheme();
     initSheet();
+    ensureVerdictDOM();
     bindGlobalClick();
     if(document.body.dataset.page==='index') initIndex();
     else if(document.body.dataset.layer) initLayer();
