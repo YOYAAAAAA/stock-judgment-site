@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="六层判断链：从大盘环境到退出与仓位的 A 股学习工具。">
+<title>六层判断链 · 从大盘到仓位</title>
+<link rel="stylesheet" href="assets/app.css">
+<script>try{var t=localStorage.getItem('stock6.v1.theme');if(t)document.documentElement.dataset.theme=JSON.parse(t);}catch(e){}</script>
+<script src="assets/dict.js" defer></script>
+<script src="assets/layers.js" defer></script>
+<script src="assets/app.js" defer></script>
+</head>
+<body data-page="index">
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><b>六层判断链</b> · A 股学习工具</div>
+    <div class="top-right">
+      <span class="chip" id="progressChip">已过 0/6</span>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="切换深色模式">暗</button>
+    </div>
+  </div>
+  <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="kicker">A 股学习工具 / 六层判断链</div>
+    <h1>从大盘到仓位，<br>六步走完一次判断</h1>
+    <p class="lede">这不是选股清单，是一条<strong>有顺序的判断链</strong>。前一层是后一层的前提：环境不对，个股再好也打折；位置不对，信号再漂亮也不做。</p>
+    <figure class="fig">
+      <svg viewBox="0 0 480 150" role="img" aria-label="六层判断链：环境、板块、位置、共振、质量、退出与仓位">
+        <text x="8" y="16" class="t-strong">六层判断链</text>
+        <line class="line-accent" x1="34" y1="58" x2="446" y2="58"/>
+        <circle class="dot" cx="34" cy="58" r="7"/>
+        <circle class="dot" cx="116" cy="58" r="7"/>
+        <circle class="dot" cx="198" cy="58" r="7"/>
+        <circle class="dot" cx="280" cy="58" r="7"/>
+        <circle class="dot" cx="362" cy="58" r="7"/>
+        <circle class="dot" cx="446" cy="58" r="7"/>
+        <text x="34" y="84" class="t-mute" text-anchor="middle">环境</text>
+        <text x="116" y="84" class="t-mute" text-anchor="middle">板块</text>
+        <text x="198" y="84" class="t-mute" text-anchor="middle">位置</text>
+        <text x="280" y="84" class="t-mute" text-anchor="middle">共振</text>
+        <text x="362" y="84" class="t-mute" text-anchor="middle">质量</text>
+        <text x="446" y="84" class="t-mute" text-anchor="middle">仓位</text>
+        <text x="34" y="102" class="t-accent" text-anchor="middle">01</text>
+        <text x="116" y="102" class="t-accent" text-anchor="middle">02</text>
+        <text x="198" y="102" class="t-accent" text-anchor="middle">03</text>
+        <text x="280" y="102" class="t-accent" text-anchor="middle">04</text>
+        <text x="362" y="102" class="t-accent" text-anchor="middle">05</text>
+        <text x="446" y="102" class="t-accent" text-anchor="middle">06</text>
+        <rect class="leg-up" x="34" y="126" width="10" height="11" rx="2"/>
+        <rect class="leg-down" x="56" y="126" width="10" height="11" rx="2"/>
+        <text x="78" y="137" class="t-mute">红涨绿跌（A股口径）</text>
+        <text x="446" y="137" class="t-mute" text-anchor="end">先环境，后仓位</text>
+      </svg>
+      <figcaption class="fig-cap">示意，非实时。六层按顺序走，前一层不过，后一层不成立。</figcaption>
+    </figure>
+  </section>
+
+  <div id="siteRoot"></div>
+
+  <div class="foot">
+    来源只使用公开经典教材：Bodie《Investments》、Brealey《Principles of Corporate Finance》、Penman《Financial Statement Analysis and Security Valuation》、Murphy《Technical Analysis of the Financial Markets》、Jorion《Value at Risk》、Damodaran《Investment Valuation》。不编页码、不附课程链接；业内经验只作参考，不作必答依据。<br>
+    本页是学习工具，不构成投资建议。
+  </div>
+</main>
+</body>
+</html>

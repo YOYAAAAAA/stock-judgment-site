@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>第 1 层 · 今天是谁在带动</title>
+<link rel="stylesheet" href="../assets/app.css">
+<script>try{var t=localStorage.getItem('stock6.v1.theme');if(t)document.documentElement.dataset.theme=JSON.parse(t);}catch(e){}</script>
+<script src="../assets/dict.js" defer></script>
+<script src="../assets/layers.js" defer></script>
+<script src="../assets/app.js" defer></script>
+</head>
+<body data-layer="layer1">
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><a href="../index.html">六层判断链</a> · <b>第 1 层</b></div>
+    <div class="top-right">
+      <span class="chip" id="progressChip">还没开始</span>
+      <a class="icon-btn" href="../index.html" aria-label="返回总览">总</a>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="切换深色模式">暗</button>
+    </div>
+  </div>
+  <div class="prog" aria-hidden="true"><i id="progFill"></i></div>
+</header>
+<main class="wrap">
+  <nav class="crumbs" aria-label="位置"><a href="../index.html">六层总览</a><span class="sep">/</span><span>第 1 层 · 大盘环境</span></nav>
+  <div id="appRoot"></div>
+</main>
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet-mask" data-sheet-close></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-grab" id="sheetGrab"><span></span></div>
+    <div class="sheet-head"><h3 id="sheetTitle"></h3><button class="sheet-x" type="button" data-sheet-close aria-label="关闭术语解释">关闭</button></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+</body>
+</html>
