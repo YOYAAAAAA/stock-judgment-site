@@ -909,7 +909,7 @@
     },{rootMargin:'0px 0px -15% 0px'});
     scanReveal();
   }
-  /* ---------- 首屏背景：纹理视差 + 渐变暂停 ---------- */
+  /* ---------- 首屏背景：仅纹理视差（三层不同速率，reduced-motion 直接不绑定） ---------- */
   function initBg(){
     var hero=document.querySelector('.hero-bg');
     if(!hero||reduceMotion()) return;
@@ -927,15 +927,6 @@
     }
     window.addEventListener('scroll',function(){if(!tick){tick=true;requestAnimationFrame(upd);}},{passive:true});
     upd();
-  }
-  /* ---------- 动态渐变层：固定全屏，插在 body 最前面（纹理之上、正文之下） ---------- */
-  function initBgFlow(){
-    if(document.querySelector('.bg-flow')) return;
-    var el=document.createElement('div');
-    el.className='bg-flow';
-    el.setAttribute('aria-hidden','true');
-    el.innerHTML='<i></i><i></i><i></i><i></i>';
-    document.body.insertBefore(el,document.body.firstChild);
   }
   /* ---------- 页面转场：一次点击只允许 一次进入（左入铺满）→ 一次退出（右出） ---------- */
   function initPageTrans(){
@@ -1016,7 +1007,6 @@
     else if(document.body.dataset.layer){initLayer();}
     initNav();
     initBg();
-    initBgFlow();
     initReveal();
     initPageTrans();
   });
