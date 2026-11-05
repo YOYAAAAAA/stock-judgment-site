@@ -119,9 +119,9 @@ l3trend:`<figure class="fig"><svg viewBox="0 0 480 150" role="img" aria-label="�
 l3rr:`<figure class="fig"><svg viewBox="0 0 480 150" role="img" aria-label="现价在压力位和支撑位之间，上方空间大于下方风险">
   <text x="8" y="16" class="t-strong">位置决定风险收益比</text>
   <line class="base" x1="24" y1="44" x2="456" y2="44"/>
-  <text x="456" y="38" class="t-up" text-anchor="end">压力位 · 上方约 8%</text>
+  <text x="456" y="38" class="t-up" text-anchor="end">压力位 · 上方约 8 个点</text>
   <line class="axis" x1="24" y1="94" x2="456" y2="94"/>
-  <text x="456" y="112" class="t-down" text-anchor="end">支撑位 · 下方约 4%</text>
+  <text x="456" y="112" class="t-down" text-anchor="end">支撑位 · 下方约 4 个点</text>
   <line class="line-accent" x1="24" y1="72" x2="456" y2="72"/>
   <text x="456" y="90" class="t-accent" text-anchor="end">现价</text>
   <line class="tick" x1="110" y1="42" x2="110" y2="46"/>
@@ -202,17 +202,17 @@ l6position:`<figure class="fig"><svg viewBox="0 0 480 150" role="img" aria-label
   <text x="8" y="16" class="t-strong">仓位＝风险预算 ÷ 止损距离</text>
   <rect class="box" x="16" y="38" width="132" height="56" rx="8"/>
   <text x="30" y="62" class="t-mute">总资金</text>
-  <text x="30" y="82" class="t-strong">100%</text>
+  <text x="30" y="82" class="t-strong">全部</text>
   <text x="160" y="70" class="t-accent" text-anchor="middle">×</text>
   <rect class="box" x="178" y="38" width="132" height="56" rx="8"/>
   <text x="192" y="62" class="t-mute">单笔风险</text>
-  <text x="192" y="82" class="t-strong">1%</text>
+  <text x="192" y="82" class="t-strong">百分之一</text>
   <text x="322" y="70" class="t-accent" text-anchor="middle">=</text>
   <rect class="box-accent" x="340" y="38" width="124" height="56" rx="8"/>
   <text x="352" y="62" class="t-mute">风险预算</text>
-  <text x="352" y="82" class="t-accent t-strong">1% 总资金</text>
+  <text x="352" y="82" class="t-accent t-strong">百分之一总资金</text>
   <line class="axis" x1="16" y1="112" x2="464" y2="112"/>
-  <text x="16" y="136" class="t-mute">1% ÷ 5% 止损距离＝最多 20% 仓位；距离越远，仓位越小</text>
+  <text x="16" y="136" class="t-mute">百分之一 ÷ 半成止损距离＝最多两成仓位；距离越远，仓位越小</text>
 </svg><figcaption class="fig-cap">示意，非实时。先算最大亏损，再倒推能买多少。</figcaption></figure>`
 };
 
@@ -269,8 +269,8 @@ b1:{step:'',short:'成交额比平时',title:'今天的成交额，比平时大�
  src:[['教材方法','Murphy《Technical Analysis of the Financial Markets》：量是价的燃料'],['学术共识','Bodie《Investments》：量价关系是统计倾向，不是定律']],
  fig:'l1vol',
  options:[
-  {k:'up',label:'明显高于五日线（约 +10% 以上）',mean:'有增量资金进场，涨跌更容易延续。',next:'b2'},
-  {k:'flat',label:'和五日线差不多（±10% 内）',mean:'存量博弈，方向持续性弱。',next:'b2'},
+  {k:'up',label:'明显高于五日线（约涨一成以上）',mean:'有增量资金进场，涨跌更容易延续。',next:'b2'},
+  {k:'flat',label:'和五日线差不多（上下不超过一成）',mean:'存量博弈，方向持续性弱。',next:'b2'},
   {k:'down',label:'明显低于五日线',mean:'资金在退，反弹容易无量。',next:'b2'}],
  next:'b2'},
 b2:{step:'',short:'量比',title:'开盘到现在，量比是多少？',
@@ -358,7 +358,7 @@ s2_fresh:{short:'消息真假',title:'消息是第一次出现，还是旧闻重
 s2_mid:{short:'板块宽度',title:'是整条板块在涨，还是只有龙头在涨？',
  plain:'发酵期看{ladder}：龙头继续封住、二线跟涨，才是健康。只有{leader}独涨，说明{relay}资金不够。',
  terms:['ladder','leader','relay'],
- where:['板块内涨幅超过 5% 的家数','龙头与二线股的涨幅差','昨日涨停股今天的表现'],
+ where:['板块内涨幅超过半成的家数','龙头与二线股的涨幅差','昨日涨停股今天的表现'],
  src:[['教材方法','Murphy：趋势需要成交量扩散确认'],['业内经验','龙头与二线接力是盘口观察']],
  fig:'l2ladder',
  options:[
@@ -518,13 +518,13 @@ p2_down:{short:'反弹压力',title:'下降趋势里，反弹到 20 日线时被
 p3:{short:'离关键位多远',title:'现价离最近的支撑和压力，有多远？',
  plain:'看离最近{support}和{resistance}的距离。离压力太近，赚的空间不够覆盖止损，就不值得动手。',
  terms:['support','resistance'],
- where:['最近一个明显前高或前低','现价到压力位、支撑位的百分比距离','这段空间能不能覆盖你的止损'],
+ where:['最近一个明显前高或前低','现价到压力位、支撑位的距离','这段空间能不能覆盖你的止损'],
  src:[['业内经验','支撑压力是盘口经验，缺严格统计证据'],['学术共识','Damodaran《Investment Valuation》：价格要对应未来现金流']],
  fig:'l3rr',
  options:[
-  {k:'close',label:'离压力不到 3%',mean:'空间太窄，风险收益比不划算。',next:'END'},
-  {k:'mid',label:'离压力 3–8%',mean:'空间一般，要看止损位置。',next:'END'},
-  {k:'far',label:'离压力 8% 以上',mean:'空间足够，但仍要验证趋势。',next:'END'}],
+  {k:'close',label:'离压力不到 3 个点',mean:'空间太窄，风险收益比不划算。',next:'END'},
+  {k:'mid',label:'离压力 3 到 8 个点',mean:'空间一般，要看止损位置。',next:'END'},
+  {k:'far',label:'离压力 8 个点以上',mean:'空间足够，但仍要验证趋势。',next:'END'}],
  next:'END'},
 r1:{short:'对大盘强弱',title:'近 20 日，它跑赢大盘了吗？',
  plain:'{relativeStrength}就是相对大盘的超额表现。还要看{beta}：高 β 的股票，大盘一跌它往往跌更多。',
@@ -588,12 +588,12 @@ checks:function(a){
  return [
  {t:'趋势位阶可做',d:a.p1==='up'?'上升趋势':(a.p1==='down'?'下降趋势':(a.p1==='range'?'区间震荡':'还没查')),s:a.p1==='up'?'ok':(a.p1==='down'?'bad':'unk')},
  {t:'相对强弱占优',d:a.r1==='strong'?'跑赢大盘':(a.r1==='weak'?'跑输大盘':(a.r1?'差不多':'还没查')),s:a.r1==='strong'?'ok':(a.r1==='weak'?'bad':'unk')},
- {t:'离压力有空间',d:a.p3==='close'?'不到 3%':(a.p3==='far'?'8% 以上':(a.p3==='mid'?'3–8%':'还没查')),s:a.p3==='close'?'bad':(a.p3==='far'?'ok':'unk')}
+ {t:'离压力有空间',d:a.p3==='close'?'不到 3 个点':(a.p3==='far'?'8 个点以上':(a.p3==='mid'?'3 到 8 个点':'还没查')),s:a.p3==='close'?'bad':(a.p3==='far'?'ok':'unk')}
  ];
 },
 verdict:function(a){
  if(a.p1==='down') return {t:'先不碰',tag:'下降趋势',sub:'均线向下、价格在下方，反弹先当逃命。等趋势走平再谈。'};
- if(a.p3==='close') return {t:'等位置',tag:'空间不足',sub:'离压力不到 3%，赚的空间不够覆盖止损。等回到支撑附近再看。'};
+ if(a.p3==='close') return {t:'等位置',tag:'空间不足',sub:'离压力不到 3 个点，赚的空间不够覆盖止损。等回到支撑附近再看。'};
  if(a.r1==='weak') return {t:'不优先',tag:'跑输大盘',sub:'没有超额收益，说明资金不认。先放一边，等它重新跑赢。'};
  if(a.p1==='up'&&a.r1==='strong') return {t:'进观察池',tag:'趋势+强弱',sub:'趋势向上、相对也强，位置合格。但仍要等量价确认，不要直接追。'};
  if(a.p1==='range') return {t:'等突破',tag:'区间',sub:'震荡区间里追高最容易买假突破。等放量突破并回踩确认。'};
@@ -748,7 +748,7 @@ c1:{short:'现价对成本',title:'现价在平均成本上方、附近，还是
 c2:{short:'套牢盘厚不厚',title:'现价上方，套牢盘是多还是少？',
  plain:'看上方筹码峰的厚度。上方越厚，反弹到那个价位越容易遇到卖压。筹码数据本身是估算，只能当辅助。',
  terms:['trappedSupply','turnover'],
- where:['现价上方 10%–20% 区间的筹码量','这些筹码形成的时间','近期换手是否已经消化'],
+ where:['现价上方一成到两成区间的筹码量','这些筹码形成的时间','近期换手是否已经消化'],
  src:[['业内经验','筹码估算受算法影响，不能当精确数据'],['教材方法','Murphy：反弹遇到前套牢区容易受阻']],
  options:[
   {k:'many',label:'上方筹码很厚',mean:'反弹阻力大，别指望一步到位。',next:'END'},
@@ -851,7 +851,7 @@ s2:{short:'止损位置',title:'止损放在结构下方、固定百分比，还
  src:[['教材方法','Murphy：支撑跌破即结构破坏'],['教材方法','Jorion《Value at Risk》：先量化风险，再决定仓位']],
  options:[
   {k:'structure',label:'结构下方，留一点缓冲',mean:'依据清晰，触发条件明确。',next:'s3'},
-  {k:'fixed',label:'固定百分比，例如 5%',mean:'简单，但可能被正常波动扫掉。',next:'s3'},
+  {k:'fixed',label:'固定比例，例如半成',mean:'简单，但可能被正常波动扫掉。',next:'s3'},
   {k:'none',label:'不设，跌了再说',mean:'没有退出规则，风险不可控。',next:'s3'}],
  next:'s3'},
 s3:{short:'触发后动作',title:'止损真的触发了，你会怎么做？',
@@ -865,14 +865,14 @@ s3:{short:'触发后动作',title:'止损真的触发了，你会怎么做？',
   {k:'wait',label:'再等一天看看',mean:'规则失效，等于没止损。',next:'END'}],
  next:'END'},
 z1:{short:'单笔风险',title:'这一笔最多允许亏掉总资金的多少？',
- plain:'{riskPerTrade}先定死。常见上限是 1%–2%；超过 5%，连续错几次就会伤到本金。',
+ plain:'{riskPerTrade}先定死。常见上限是百分之一到二；超过半成，连续错几次就会伤到本金。',
  terms:['riskPerTrade','fixedFraction'],
  where:['账户总资金','单笔最大可亏金额','过去最大回撤能不能承受'],
  src:[['教材方法','Jorion《Value at Risk》：风险预算'],['学术共识','Brealey：风险与回报要匹配']],
  options:[
-  {k:'one',label:'1% 以内',mean:'保守，连续出错也能活。',next:'z2'},
-  {k:'two',label:'2%–3%',mean:'可接受，但要求执行严格。',next:'z2'},
-  {k:'five',label:'5% 以上',mean:'过重，几次错误就伤本金。',next:'z2'}],
+  {k:'one',label:'百分之一以内',mean:'保守，连续出错也能活。',next:'z2'},
+  {k:'two',label:'百分之二到三',mean:'可接受，但要求执行严格。',next:'z2'},
+  {k:'five',label:'半成以上',mean:'过重，几次错误就伤本金。',next:'z2'}],
  next:'z2'},
 z2:{short:'仓位算法',title:'仓位是算出来的，还是凭感觉？',
  plain:'{positionSize}＝风险预算 ÷ 止损距离。止损越远，仓位越小；不是越有信心买得越多。',
@@ -891,9 +891,9 @@ p1:{short:'同向暴露',title:'现有持仓里，同方向的暴露有多大？
  where:['所有持仓的方向','同方向仓位占总资金比例','是否集中在同一板块'],
  src:[['教材方法','Jorion：组合风险不是单笔风险的加总'],['学术共识','Brealey：分散降低非系统性风险']],
  options:[
-  {k:'low',label:'同方向不到 20%',mean:'暴露低，还有空间。',next:'p2'},
-  {k:'mid',label:'20%–40%',mean:'中等，要看相关性。',next:'p2'},
-  {k:'high',label:'超过 40%',mean:'同向过重，一次回撤会很痛。',next:'p2'}],
+  {k:'low',label:'同方向不到两成',mean:'暴露低，还有空间。',next:'p2'},
+  {k:'mid',label:'两成到四成',mean:'中等，要看相关性。',next:'p2'},
+  {k:'high',label:'超过四成',mean:'同向过重，一次回撤会很痛。',next:'p2'}],
  next:'p2'},
 p2:{short:'相关性',title:'这些持仓跌起来，会同时跌吗？',
  plain:'看{correlation}：同板块、同风格、同题材的股票，涨跌往往同向。多个仓位可能只是同一个仓位。',
@@ -915,12 +915,12 @@ checks:function(a){
  return [
  {t:'止损有依据且会执行',d:a.s2==='none'?'没有止损':(a.s3==='add'?'触发后加仓':(a.s3==='execute'?'按计划执行':'还没查')),s:(a.s2==='none'||a.s3==='add'||a.s3==='wait')?'bad':(a.s2&&a.s3?'ok':'unk')},
  {t:'仓位按风险算',d:a.z2==='formula'?'风险预算 ÷ 止损距离':(a.z2==='full'?'满仓':'还没查'),s:(a.z1==='five'||a.z2==='full')?'bad':(a.z2==='formula'?'ok':'unk')},
- {t:'组合不过度同向',d:a.p1==='high'?'同向超过 40%':(a.p1==='low'?'同向不到 20%':'还没查'),s:a.p1==='high'?'bad':(a.p1==='low'?'ok':'unk')}
+ {t:'组合不过度同向',d:a.p1==='high'?'同向超过四成':(a.p1==='low'?'同向不到两成':'还没查'),s:a.p1==='high'?'bad':(a.p1==='low'?'ok':'unk')}
  ];
 },
 verdict:function(a){
  if(a.s2==='none'||a.s3==='add'||a.s3==='wait') return {t:'规则没写完',tag:'不能下单',sub:'没有可执行的止损，就没有可控的风险。先把失败剧本写清楚。'};
- if(a.z1==='five'||a.z2==='full') return {t:'仓位过重',tag:'先减仓',sub:'单笔风险太大，几次错误就会伤到本金。先按 1%–2% 重算。'};
+ if(a.z1==='five'||a.z2==='full') return {t:'仓位过重',tag:'先减仓',sub:'单笔风险太大，几次错误就会伤到本金。先按百分之一到二重算。'};
  if(a.p1==='high'&&a.p2==='high') return {t:'同向过度',tag:'假分散',sub:'持仓看似多笔，其实是一个方向。降低同向暴露，再谈加仓。'};
  if(a.s3==='execute'&&a.z2==='formula'&&a.p1==='low') return {t:'计划成立',tag:'可执行',sub:'止损、仓位、组合三项都过关。这才是一笔可以交给纪律的交易。'};
  return {t:'还差一项',tag:'先补齐',sub:'退出、仓位或组合暴露有一项没定。补齐之前，不要用“信心”代替规则。'};
@@ -1022,7 +1022,7 @@ phrase:{
  layer5:{good:{main:'质地过关',nat:'有利',act:'持',full:'质地过关：现金含量、筹码位置、杠杆三项都过关。',pos:'可以深入，仓位等买点再定',stop:'现金流恶化或杠杆抬升就退出研究',flip:'应收增速超过收入'},
          neutral:{main:'证据不足',nat:'观望',act:'等',full:'证据不足：筹码或利润质量有一项没查清。',pos:'只做研究，不下单',stop:'没有仓位，不设止损',flip:'补齐筹码与现金流两项'},
          bad:{main:'利润存疑',nat:'不利',act:'减',full:'利润存疑或上方套牢重：先别按高增长估值。',pos:'不参与，已有仓位先减',stop:'反弹到筹码峰就减',flip:'经营现金流回到净利润之上'}},
- layer6:{good:{main:'计划成立',nat:'有利',act:'持',full:'计划成立：止损、仓位、组合三项都过关。',pos:'按风险预算 ÷ 止损距离算出的仓位执行',stop:'结构下方留缓冲，触发即走',flip:'止损触发，或同向暴露超过 40%'},
+ layer6:{good:{main:'计划成立',nat:'有利',act:'持',full:'计划成立：止损、仓位、组合三项都过关。',pos:'按风险预算 ÷ 止损距离算出的仓位执行',stop:'结构下方留缓冲，触发即走',flip:'止损触发，或同向暴露超过四成'},
          neutral:{main:'还差一项',nat:'观望',act:'等',full:'还差一项：退出、仓位或组合暴露没定。',pos:'补齐之前不下单',stop:'没有仓位，不设止损',flip:'三项齐了再下单'},
          bad:{main:'规则缺失',nat:'不利',act:'减',full:'规则缺失：没有可执行的止损，或仓位过重。',pos:'不下单，先把仓位减到风险预算内',stop:'先写出结构止损，再谈买入',flip:'止损与仓位都写成可执行规则'}},
  index:{good:{main:'六层通关',nat:'有利',act:'买',full:'六层通关：环境、板块、位置、共振、质量、仓位都过。',pos:'按第六层算出的仓位执行',stop:'任一层转弱就退回上一层',flip:'任一层出现否决'},
