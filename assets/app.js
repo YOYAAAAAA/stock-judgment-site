@@ -324,7 +324,7 @@
       +'<div class="bg-tex t-far" data-f="0.15"></div><div class="bg-tex t-mid" data-f="0.4"></div><div class="bg-tex t-near" data-f="0.7"></div>'
       +'<div class="bg-veil"></div></div>'
       +'<div class="kicker">'+esc(layer.kicker)+'</div><h1>'+esc(layer.title)+'</h1>'
-      +'<p class="lede">'+layer.lede+'</p>'+(layer.fig?figHTML(layer.fig):'')+'</div>'
+      +(layer.lede?'<p class="lede">'+layer.lede+'</p>':'')+(layer.fig?figHTML(layer.fig):'')+'</div>'
       +'<div id="startCard"></div><div id="stage"></div>'
       +'<div class="night"><div class="night-in">'
       +'<section class="glossary"><div class="gloss-head"><h2>术语表</h2><span class="gloss-sub">这一层出现的词，每个最多三句</span></div>'
@@ -935,6 +935,63 @@
       });},{threshold:0}).observe(hero);
     }
   }
+  /* ---------- 页面转场：遮幕从左铺满（0.4s）→ 跳转 → 目标页向右退出（0.45s） ---------- */
+  function initPageTrans(){
+    var KEY='stock6.v1.pt';
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var busy=false,ov=null;
+    function make(){
+      if(ov&&ov.parentNode) return ov;
+      ov=document.createElement('div');
+      ov.className='pv';
+      ov.setAttribute('aria-hidden','true');
+      ov.innerHTML='<span class="pv-logo">YØYA</span>';
+      (document.body||document.documentElement).appendChild(ov);
+      return ov;
+    }
+    function playIn(url){
+      if(busy) return;
+      busy=true;
+      var o=make(),jumped=false;
+      function jump(){
+        if(jumped) return;
+        jumped=true;
+        try{sessionStorage.setItem(KEY,'1');}catch(e){}
+        location.href=url;
+      }
+      o.classList.add('pv-cover');
+      o.addEventListener('transitionend',jump,{once:true});
+      setTimeout(jump,440);
+    }
+    document.addEventListener('click',function(e){
+      if(e.defaultPrevented||busy) return;
+      if(e.button&&e.button!==0) return;
+      if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
+      var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
+      if(!a) return;
+      var raw=a.getAttribute('href')||'';
+      if(!raw||raw.charAt(0)==='#') return;
+      if(a.target==='_blank'||a.hasAttribute('download')) return;
+      var u;try{u=new URL(a.href,location.href);}catch(err){return;}
+      if(u.origin!==location.origin) return;
+      if(u.href.split('#')[0]===location.href.split('#')[0]) return;
+      e.preventDefault();
+      playIn(u.href);
+    },true);
+    var flag=false;
+    try{flag=sessionStorage.getItem(KEY)==='1';if(flag)sessionStorage.removeItem(KEY);}catch(e){}
+    if(!flag) return;
+    var o=make();
+    o.classList.add('pv-cover');
+    o.style.transition='none';
+    void o.offsetWidth;
+    o.style.transition='';
+    requestAnimationFrame(function(){
+      o.classList.remove('pv-cover');
+      o.classList.add('pv-out');
+    });
+    setTimeout(function(){o.classList.remove('pv-out');o.style.transform='';},1000);
+  }
   document.addEventListener('DOMContentLoaded',function(){
     initTheme();
     initSheet();
@@ -946,5 +1003,6 @@
     initNav();
     initBg();
     initReveal();
+    initPageTrans();
   });
 })();

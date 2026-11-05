@@ -550,7 +550,8 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 .hero > :not(.hero-bg){position:relative;z-index:1}
 /* 首屏背景只在 hero 内铺，后面的内容容器必须压在其上，避免白纱洗淡正文 */
 #siteRoot,.night,#startCard,#stage{position:relative;z-index:1}
-.hero-bg{position:absolute;left:0;right:0;top:0;height:clamp(560px,110vh,920px);z-index:-1;pointer-events:none;overflow:hidden}
+.hero-bg{position:absolute;left:0;right:0;top:0;height:clamp(560px,110vh,920px);z-index:-1;pointer-events:none;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 58%,rgba(0,0,0,0));mask-image:linear-gradient(#000 58%,rgba(0,0,0,0))}
 .bg-paused .bg-grad i{animation-play-state:paused}
 .bg-grad{position:absolute;inset:0;overflow:hidden}
 .bg-grad i{position:absolute;left:50%;top:36%;width:58vmin;height:58vmin;margin:-29vmin 0 0 -29vmin;border-radius:50%;
@@ -568,10 +569,10 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 @keyframes orbD{0%,100%{transform:translate3d(0,-13vh,0)}25%{transform:translate3d(18vw,0,0)}50%{transform:translate3d(0,13vh,0)}75%{transform:translate3d(-18vw,0,0)}}
 .bg-tex{position:absolute;left:50%;top:50%;transform:translate3d(-50%,-50%,0);
   background-image:url(tex-contour.jpg);background-repeat:repeat;background-position:center;will-change:transform}
-.t-far{width:154%;height:154%;background-size:560px auto;opacity:.16}
-.t-mid{width:124%;height:124%;background-size:460px auto;opacity:.22}
-.t-near{width:104%;height:104%;background-size:380px auto;opacity:.3}
-.bg-veil{position:absolute;inset:0;background:rgba(245,247,251,.68)}
+.t-far{width:154%;height:154%;background-size:560px auto;opacity:.05}
+.t-mid{width:124%;height:124%;background-size:460px auto;opacity:.07}
+.t-near{width:104%;height:104%;background-size:380px auto;opacity:.09}
+.bg-veil{position:absolute;inset:0;background:rgba(245,247,251,.5)}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .bg-veil{background:rgba(9,10,13,.64)}
   :root:not([data-theme="light"]) .bg-tex{filter:invert(1) brightness(.5)}
@@ -580,6 +581,16 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 :root[data-theme="dark"] .bg-veil{background:rgba(9,10,13,.64)}
 :root[data-theme="dark"] .bg-tex{filter:invert(1) brightness(.5)}
 :root[data-theme="dark"] .bg-grad i{opacity:.42}
+/* 全站底纹：固定在最底层，随滚动保持覆盖；只做背景，不参与布局、不吃点击 */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-color:var(--bg);
+  background-image:url(tex-contour-light.jpg);
+  background-repeat:repeat;background-size:300px auto;background-position:center top;
+  background-blend-mode:multiply;opacity:.26}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) body::before{background-image:url(tex-contour.jpg);background-blend-mode:screen;opacity:.45}
+}
+:root[data-theme="dark"] body::before{background-image:url(tex-contour.jpg);background-blend-mode:screen;opacity:.45}
 /* 滚动淡入：仅内容区；初始 0 / 28px，播完回自然流 */
 .rv{opacity:0;transform:translate3d(0,28px,0);transition:opacity .7s cubic-bezier(.215,.61,.355,1),transform .7s cubic-bezier(.215,.61,.355,1)}
 .rv-on{opacity:1;transform:translate3d(0,0,0)}
@@ -590,3 +601,16 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
   .bg-tex{will-change:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+/* 页面转场遮幕：只做 translateX，不加阴影/模糊；覆盖导航与量条 */
+.pv{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#fffa00;
+  transform:translateX(-100%);transition:transform .4s cubic-bezier(.65,.05,.36,1);
+  display:flex;align-items:center;justify-content:center}
+.pv-cover{transform:translateX(0)}
+.pv-out{transform:translateX(100%);transition-duration:.45s}
+.pv-logo{font:800 20px/1 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  letter-spacing:.14em;color:#14181f}
+:root[data-theme="dark"] .pv{background:#e9e05c}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .pv{background:#e9e05c}
+}
+@media (prefers-reduced-motion:reduce){.pv{display:none}}

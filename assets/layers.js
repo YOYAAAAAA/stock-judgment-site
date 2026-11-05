@@ -223,7 +223,6 @@ window.LAYERS=[];
 window.LAYERS.push({
 id:'layer1',no:1,kicker:'Layer 01 / 大盘环境',
 title:'今天是谁在带动？量能够不够？',
-lede:'先用两个问题把<strong>今天的环境</strong>说清楚。环境不对，后面的个股判断都会失真。每一步只问一件事，选完自动往下走。',
 preview:{ask:'谁在带动、带动有多真；量能够不够、量价配不配',stop:'今天适不适合继续看个股'},
 fig:'l1who',
 entries:[
