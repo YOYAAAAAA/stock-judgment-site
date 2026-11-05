@@ -320,7 +320,6 @@
     stageEl=null;
     root.innerHTML=
       '<div class="hero"><div class="hero-bg" aria-hidden="true">'
-      +'<div class="bg-grad"><i></i><i></i><i></i><i></i></div>'
       +'<div class="bg-tex t-far" data-f="0.15"></div><div class="bg-tex t-mid" data-f="0.4"></div><div class="bg-tex t-near" data-f="0.7"></div>'
       +'<div class="bg-veil"></div></div>'
       +'<div class="kicker">'+esc(layer.kicker)+'</div><h1>'+esc(layer.title)+'</h1>'
@@ -928,40 +927,56 @@
     }
     window.addEventListener('scroll',function(){if(!tick){tick=true;requestAnimationFrame(upd);}},{passive:true});
     upd();
-    var grad=hero.querySelector('.bg-grad');
-    if(grad&&'IntersectionObserver' in window){
-      new IntersectionObserver(function(es){es.forEach(function(e){
-        hero.classList.toggle('bg-paused',!e.isIntersecting);
-      });},{threshold:0}).observe(hero);
-    }
   }
-  /* ---------- 页面转场：遮幕从左铺满（0.4s）→ 跳转 → 目标页向右退出（0.45s） ---------- */
+  /* ---------- 动态渐变层：固定全屏，插在 body 最前面（纹理之上、正文之下） ---------- */
+  function initBgFlow(){
+    if(document.querySelector('.bg-flow')) return;
+    var el=document.createElement('div');
+    el.className='bg-flow';
+    el.setAttribute('aria-hidden','true');
+    el.innerHTML='<i></i><i></i><i></i><i></i>';
+    document.body.insertBefore(el,document.body.firstChild);
+  }
+  /* ---------- 页面转场：一次点击只允许 一次进入（左入铺满）→ 一次退出（右出） ---------- */
   function initPageTrans(){
     var KEY='stock6.v1.pt';
+    if(window.__ptInit) return;            /* 目标页/重复初始化只跑一次 */
+    window.__ptInit=true;
     if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var busy=false,ov=null;
-    function make(){
-      if(ov&&ov.parentNode) return ov;
-      ov=document.createElement('div');
-      ov.className='pv';
-      ov.setAttribute('aria-hidden','true');
-      ov.innerHTML='<span class="pv-logo">YØYA</span>';
-      (document.body||document.documentElement).appendChild(ov);
-      return ov;
+    var busy=false;
+    function node(){
+      var o=document.getElementById('ptOverlay');
+      if(o&&o.parentNode) return o;
+      o=document.createElement('div');
+      o.id='ptOverlay';o.className='pv';o.setAttribute('aria-hidden','true');
+      o.innerHTML='<span class="pv-logo">YØYA</span>';
+      document.body.appendChild(o);
+      return o;
     }
     function playIn(url){
       if(busy) return;
       busy=true;
-      var o=make(),jumped=false;
-      function jump(){
-        if(jumped) return;
-        jumped=true;
+      var o=node(),done=false,tid=0;
+      function finish(){
+        if(done) return; done=true;
+        clearTimeout(tid);
+        o.removeEventListener('animationend',onEnd);
+        o.classList.add('pv-cover');
+        o.style.transform='translateX(0)';   /* 跳转期间保持铺满，不再滑动 */
         try{sessionStorage.setItem(KEY,'1');}catch(e){}
         location.href=url;
       }
+      function onEnd(ev){
+        if(ev.target!==o||ev.animationName!=='pvIn') return;
+        finish();
+      }
+      /* pvIn 动画固定从 -100% 起，不依赖 transition 的起始样式；
+         不再需要先钉在屏外再 requestAnimationFrame 加类 */
+      o.classList.remove('pv-cover','pv-out');
+      void o.offsetWidth;
       o.classList.add('pv-cover');
-      o.addEventListener('transitionend',jump,{once:true});
-      setTimeout(jump,440);
+      o.addEventListener('animationend',onEnd);
+      tid=setTimeout(finish,470);          /* 兜底：animationend 先到就清掉它 */
     }
     document.addEventListener('click',function(e){
       if(e.defaultPrevented||busy) return;
@@ -981,16 +996,15 @@
     var flag=false;
     try{flag=sessionStorage.getItem(KEY)==='1';if(flag)sessionStorage.removeItem(KEY);}catch(e){}
     if(!flag) return;
-    var o=make();
-    o.classList.add('pv-cover');
-    o.style.transition='none';
-    void o.offsetWidth;
-    o.style.transition='';
-    requestAnimationFrame(function(){
-      o.classList.remove('pv-cover');
-      o.classList.add('pv-out');
-    });
-    setTimeout(function(){o.classList.remove('pv-out');o.style.transform='';},1000);
+    /* 目标页：<head> 内联脚本已给 html 加 .pt-in，首帧就是铺满状态；这里只负责向右退出 */
+    var o=node(),root=document.documentElement;
+    o.classList.remove('pv-cover');
+    o.classList.add('pv-out');
+    root.classList.remove('pt-in');
+    o.addEventListener('animationend',function(ev){
+      if(ev.target===o&&ev.animationName==='pvOut') o.remove();
+    },{once:true});
+    setTimeout(function(){root.classList.remove('pt-in');if(o.parentNode) o.remove();},1000);
   }
   document.addEventListener('DOMContentLoaded',function(){
     initTheme();
@@ -1002,6 +1016,7 @@
     else if(document.body.dataset.layer){initLayer();}
     initNav();
     initBg();
+    initBgFlow();
     initReveal();
     initPageTrans();
   });

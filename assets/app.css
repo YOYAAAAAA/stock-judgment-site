@@ -1,7 +1,9 @@
 :root{
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
-  --bg:#f5f5f7;--surface:#fff;--surface-2:#f2f2f7;--text:#1d1d1f;--text-2:#6e6e73;--text-3:#86868b;
+  --bg:#f5f5f5;--surface:#fff;--surface-2:#f2f2f7;--text:#1d1d1f;--text-2:#6e6e73;--text-3:#86868b;
   --line:#e5e5ea;--line-2:#d2d2d7;--accent:#0071e3;--accent-soft:rgba(0,113,227,.1);
+  /* 纸白底与白卡只差 1.04:1，靠这条描边分层 */
+  --card-line:rgba(0,0,0,.06);
   /* A 股口径：红只表示涨，绿只表示跌；量能一律中性蓝 */
   --up:#c9412f;--down:#2f7d5e;--wy:#b5851f;--fig-bg:#f5f5f7;
   --radius:18px;--shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.05);
@@ -17,6 +19,7 @@
     --line:#2c2c2e;--line-2:#3a3a3c;--accent:#2997ff;--accent-soft:rgba(41,151,255,.16);
     --up:#e07a68;--down:#6fb99a;--wy:#d8a63a;--fig-bg:#2c2c2e;
     --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.4);
+    --card-line:rgba(255,255,255,.09);
     --tr-weak:#b47a74;--tr-mid:#d65f51;--tr-strong:#fa432e;
     --tg-weak:#4d8f70;--tg-mid:#2ab272;--tg-strong:#05d675;
     --ty-weak:#9f8956;--ty-mid:#c6992f;--ty-strong:#efa906;
@@ -27,18 +30,19 @@
   --line:#2c2c2e;--line-2:#3a3a3c;--accent:#2997ff;--accent-soft:rgba(41,151,255,.16);
   --up:#e07a68;--down:#6fb99a;--wy:#d8a63a;--fig-bg:#2c2c2e;
   --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.4);
+  --card-line:rgba(255,255,255,.09);
   --tr-weak:#b47a74;--tr-mid:#d65f51;--tr-strong:#fa432e;
   --tg-weak:#4d8f70;--tg-mid:#2ab272;--tg-strong:#05d675;
   --ty-weak:#9f8956;--ty-mid:#c6992f;--ty-strong:#efa906;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:clamp(16px,4.3vw,17px);line-height:1.7;
+body{background:transparent;color:var(--text);font-family:var(--font);font-size:clamp(16px,4.3vw,17px);line-height:1.7;
   -webkit-font-smoothing:antialiased;transition:background .3s var(--ease),color .3s var(--ease);overflow-x:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 a{color:var(--accent);text-decoration:none}
 img,svg{max-width:100%}
-.wrap{max-width:720px;margin:0 auto;padding:0 clamp(16px,4vw,24px) calc(72px + env(safe-area-inset-bottom))}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 clamp(16px,4vw,24px) calc(72px + env(safe-area-inset-bottom))}
 .topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
   -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
   border-bottom:1px solid var(--line)}
@@ -86,7 +90,7 @@ img,svg{max-width:100%}
 h1{font-size:clamp(28px,6.2vw,40px);line-height:1.16;letter-spacing:-.022em;font-weight:600;margin:12px 0 0;max-width:640px}
 .lede{margin:16px 0 0;font-size:clamp(16px,4.3vw,17px);line-height:1.75;color:var(--text-2);max-width:34em}
 .lede strong{color:var(--text);font-weight:600}
-.start-card{margin-top:30px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,28px)}
+.start-card{margin-top:30px;background:var(--surface);border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,28px)}
 .start-title{font-size:15px;font-weight:600}
 .start-sub{margin-top:6px;font-size:13.5px;color:var(--text-2);line-height:1.7}
 .entries{margin-top:18px;display:flex;flex-direction:column;gap:12px}
@@ -116,7 +120,7 @@ h1{font-size:clamp(28px,6.2vw,40px);line-height:1.16;letter-spacing:-.022em;font
 .jp-chip.veto{border-color:var(--up);background:color-mix(in srgb,var(--up) 9%,var(--surface))}
 .jp-chip.veto .jpt,.jp-chip.veto .jpw{color:var(--up)}
 .jp-chip.veto .jpw{border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
-.q-card{margin-top:14px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,30px)}
+.q-card{margin-top:14px;background:var(--surface);border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,30px)}
 .q-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .q-step{font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 10px;
   letter-spacing:.02em;font-variant-numeric:tabular-nums}
@@ -160,7 +164,7 @@ h2.q-title{font-size:clamp(19.5px,4.6vw,23px);line-height:1.4;letter-spacing:-.0
 .link-btn:disabled:hover{background:var(--surface-2);color:var(--text-2)}
 .q-note{margin-left:auto;font-size:11.5px;color:var(--text-3)}
 .q-ask{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:20px 0 0}
-.verdict-card{margin-top:14px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,30px)}
+.verdict-card{margin-top:14px;background:var(--surface);border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--shadow);padding:clamp(18px,4.4vw,30px)}
 .verdict-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
 .verdict{font-size:clamp(24px,6.6vw,30px);font-weight:600;letter-spacing:-.02em;margin-top:8px;line-height:1.3}
 .verdict .tag{display:inline-block;vertical-align:3px;margin-left:8px;font-size:11px;font-weight:500;letter-spacing:.02em;padding:2px 9px;
@@ -187,7 +191,7 @@ h2.q-title{font-size:clamp(19.5px,4.6vw,23px);line-height:1.4;letter-spacing:-.0
 .gloss-search{margin-top:14px;width:100%;height:42px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);
   color:var(--text);font-size:14px;padding:0 14px;outline:none;-webkit-appearance:none}
 .gloss-search:focus{border-color:var(--accent);background:var(--surface)}
-.gloss-list{margin:14px 0 0;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.gloss-list{margin:14px 0 0;background:var(--surface);border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .gloss-item{padding:15px 20px;border-bottom:1px solid var(--line)}
 .gloss-item:last-child{border-bottom:0}
 .gloss-item[hidden]{display:none}
@@ -282,7 +286,7 @@ body.has-night::after{display:none}
 .sheet-body p+p{margin-top:14px}
 .sheet-body .k{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:2px}
 /* 总览 */
-.progress-card{margin-top:28px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+.progress-card{margin-top:28px;background:var(--surface);border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--shadow);
   padding:20px clamp(18px,4.4vw,26px);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .progress-main{min-width:150px}
 .progress-num{font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
@@ -376,7 +380,7 @@ body[data-expanded="true"]{--bhCur:var(--blockH);--fadeCur:var(--fade)}
 [data-verdict="neutral"][data-strength="2"]{--blk:124 95 29}
 [data-verdict="neutral"][data-strength="3"]{--blk:149 106 4}
 [data-verdict="none"]{--blk:150 152 158}
-body[data-verdict="unknown"]{background:var(--blueBg)}
+body[data-verdict="unknown"]{background:color-mix(in srgb,var(--blueBg) 88%,transparent)}
 .vblock{position:fixed;left:0;right:0;height:var(--blockHC);z-index:18;display:none;pointer-events:none;overflow:hidden;
   transition:height .24s var(--ease)}
 body[data-expanded="true"] .vblock{height:var(--blockH)}
@@ -552,21 +556,19 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 #siteRoot,.night,#startCard,#stage{position:relative;z-index:1}
 .hero-bg{position:absolute;left:0;right:0;top:0;height:clamp(560px,110vh,920px);z-index:-1;pointer-events:none;overflow:hidden;
   -webkit-mask-image:linear-gradient(#000 58%,rgba(0,0,0,0));mask-image:linear-gradient(#000 58%,rgba(0,0,0,0))}
-.bg-paused .bg-grad i{animation-play-state:paused}
-.bg-grad{position:absolute;inset:0;overflow:hidden}
-.bg-grad i{position:absolute;left:50%;top:36%;width:58vmin;height:58vmin;margin:-29vmin 0 0 -29vmin;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,122,255,.34) 0,rgba(0,122,255,.13) 44%,rgba(0,122,255,0) 72%);
-  will-change:transform;animation:orbA 4.8s linear infinite}
-.bg-grad i:nth-child(2){background:radial-gradient(circle,rgba(255,214,0,.26) 0,rgba(255,214,0,.1) 44%,rgba(255,214,0,0) 72%);
-  animation-name:orbB;animation-delay:-2.1s}
-.bg-grad i:nth-child(3){background:radial-gradient(circle,rgba(0,122,255,.22) 0,rgba(0,122,255,.08) 44%,rgba(0,122,255,0) 72%);
-  animation-name:orbC;animation-delay:-4.2s}
-.bg-grad i:nth-child(4){background:radial-gradient(circle,rgba(255,214,0,.2) 0,rgba(255,214,0,.07) 44%,rgba(255,214,0,0) 72%);
-  animation-name:orbD;animation-delay:-1s}
-@keyframes orbA{0%,100%{transform:translate3d(0,-11vh,0)}25%{transform:translate3d(26vw,0,0)}50%{transform:translate3d(0,11vh,0)}75%{transform:translate3d(-26vw,0,0)}}
-@keyframes orbB{0%,100%{transform:translate3d(0,-15vh,0)}25%{transform:translate3d(22vw,0,0)}50%{transform:translate3d(0,15vh,0)}75%{transform:translate3d(-22vw,0,0)}}
-@keyframes orbC{0%,100%{transform:translate3d(0,-11vh,0)}25%{transform:translate3d(30vw,0,0)}50%{transform:translate3d(0,11vh,0)}75%{transform:translate3d(-30vw,0,0)}}
-@keyframes orbD{0%,100%{transform:translate3d(0,-13vh,0)}25%{transform:translate3d(18vw,0,0)}50%{transform:translate3d(0,13vh,0)}75%{transform:translate3d(-18vw,0,0)}}
+/* 动态渐变：固定全屏独立图层，压在等高线纹理之上、正文/卡片之下；只动 transform，合成层不重绘 */
+.bg-flow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-flow i{position:absolute;left:50%;top:50%;width:72vmin;height:72vmin;margin:-36vmin 0 0 -36vmin;border-radius:50%;
+  background:radial-gradient(circle,rgb(var(--fc) / var(--fa)) 0,rgb(var(--fc) / calc(var(--fa) * .62)) 42%,rgb(var(--fc) / 0) 72%);
+  will-change:transform;animation:flowA 4.8s linear infinite}
+.bg-flow i:nth-child(1){--fc:255 250 0;--fa:.85}
+.bg-flow i:nth-child(2){--fc:255 245 107;--fa:.86;animation-name:flowB}
+.bg-flow i:nth-child(3){--fc:0 113 227;--fa:.62;animation-name:flowC}
+.bg-flow i:nth-child(4){--fc:125 182 255;--fa:.72;animation-name:flowD}
+@keyframes flowA{0%{transform:translate3d(70vw,0vh,0)}12.5%{transform:translate3d(49.5vw,21.2vh,0)}25%{transform:translate3d(0vw,30vh,0)}37.5%{transform:translate3d(-49.5vw,21.2vh,0)}50%{transform:translate3d(-70vw,0vh,0)}62.5%{transform:translate3d(-49.5vw,-21.2vh,0)}75%{transform:translate3d(0vw,-30vh,0)}87.5%{transform:translate3d(49.5vw,-21.2vh,0)}100%{transform:translate3d(70vw,0vh,0)}}
+@keyframes flowB{0%{transform:translate3d(-30.3vw,34.5vh,0)}12.5%{transform:translate3d(-58vw,10.1vh,0)}25%{transform:translate3d(-51.8vw,-20.2vh,0)}37.5%{transform:translate3d(-15.2vw,-38.7vh,0)}50%{transform:translate3d(30.3vw,-34.5vh,0)}62.5%{transform:translate3d(58vw,-10.1vh,0)}75%{transform:translate3d(51.8vw,20.2vh,0)}87.5%{transform:translate3d(15.2vw,38.7vh,0)}100%{transform:translate3d(-30.3vw,34.5vh,0)}}
+@keyframes flowC{0%{transform:translate3d(-39.2vw,-26.1vh,0)}12.5%{transform:translate3d(21.6vw,-28.9vh,0)}25%{transform:translate3d(69.7vw,-14.7vh,0)}37.5%{transform:translate3d(77vw,8.1vh,0)}50%{transform:translate3d(39.2vw,26.1vh,0)}62.5%{transform:translate3d(-21.6vw,28.9vh,0)}75%{transform:translate3d(-69.7vw,14.7vh,0)}87.5%{transform:translate3d(-77vw,-8.1vh,0)}100%{transform:translate3d(-39.2vw,-26.1vh,0)}}
+@keyframes flowD{0%{transform:translate3d(27vw,29.5vh,0)}12.5%{transform:translate3d(-10.6vw,34.2vh,0)}25%{transform:translate3d(-42.1vw,18.9vh,0)}37.5%{transform:translate3d(-48.9vw,-7.5vh,0)}50%{transform:translate3d(-27vw,-29.5vh,0)}62.5%{transform:translate3d(10.6vw,-34.2vh,0)}75%{transform:translate3d(42.1vw,-18.9vh,0)}87.5%{transform:translate3d(48.9vw,7.5vh,0)}100%{transform:translate3d(27vw,29.5vh,0)}}
 .bg-tex{position:absolute;left:50%;top:50%;transform:translate3d(-50%,-50%,0);
   background-image:url(tex-contour.jpg);background-repeat:repeat;background-position:center;will-change:transform}
 .t-far{width:154%;height:154%;background-size:560px auto;opacity:.05}
@@ -576,41 +578,53 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]) .bg-veil{background:rgba(9,10,13,.64)}
   :root:not([data-theme="light"]) .bg-tex{filter:invert(1) brightness(.5)}
-  :root:not([data-theme="light"]) .bg-grad i{opacity:.42}
+  :root:not([data-theme="light"]) .bg-flow i{opacity:.34;filter:saturate(.7)}
 }
 :root[data-theme="dark"] .bg-veil{background:rgba(9,10,13,.64)}
 :root[data-theme="dark"] .bg-tex{filter:invert(1) brightness(.5)}
-:root[data-theme="dark"] .bg-grad i{opacity:.42}
-/* 全站底纹：固定在最底层，随滚动保持覆盖；只做背景，不参与布局、不吃点击 */
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background-color:var(--bg);
-  background-image:url(tex-contour-light.jpg);
-  background-repeat:repeat;background-size:300px auto;background-position:center top;
-  background-blend-mode:multiply;opacity:.26}
+:root[data-theme="dark"] .bg-flow i{opacity:.34;filter:saturate(.7)}
+/* 全站底纹：直接铺在 html 画布上（最底层），任何容器背景都在它之上；
+   顺序为 纸白底 #f5f5f5 → 等高线纹理 → (.bg-flow 动态渐变) → 正文；
+   不用 body::before + z-index:-1，避免被 body 自身背景（或不支持负层级的浏览器）整块盖掉 */
+html{background-color:var(--bg);background-image:url(tex-contour-1487-light.jpg);background-repeat:repeat;
+  background-size:558px 675px;background-position:center top}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) body::before{background-image:url(tex-contour.jpg);background-blend-mode:screen;opacity:.45}
+  :root:not([data-theme="light"]){background-image:url(tex-contour-1487-dark.jpg)}
 }
-:root[data-theme="dark"] body::before{background-image:url(tex-contour.jpg);background-blend-mode:screen;opacity:.45}
+:root[data-theme="dark"]{background-image:url(tex-contour-1487-dark.jpg)}
 /* 滚动淡入：仅内容区；初始 0 / 28px，播完回自然流 */
 .rv{opacity:0;transform:translate3d(0,28px,0);transition:opacity .7s cubic-bezier(.215,.61,.355,1),transform .7s cubic-bezier(.215,.61,.355,1)}
 .rv-on{opacity:1;transform:translate3d(0,0,0)}
 .rv-anim{will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){
   .rv{opacity:1;transform:none;transition:none}
-  .bg-grad i{animation:none}
+  .bg-flow i{animation:none}
+  .bg-flow i:nth-child(1){transform:translate3d(70vw,0,0)}
+  .bg-flow i:nth-child(2){transform:translate3d(-30.3vw,34.5vh,0)}
+  .bg-flow i:nth-child(3){transform:translate3d(-39.2vw,-26.1vh,0)}
+  .bg-flow i:nth-child(4){transform:translate3d(27vw,29.5vh,0)}
   .bg-tex{will-change:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 /* 页面转场遮幕：只做 translateX，不加阴影/模糊；覆盖导航与量条 */
-.pv{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#fffa00;
-  transform:translateX(-100%);transition:transform .4s cubic-bezier(.65,.05,.36,1);
+.pv{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#f5f5f5;
+  transform:translateX(-100%);
   display:flex;align-items:center;justify-content:center}
-.pv-cover{transform:translateX(0)}
-.pv-out{transform:translateX(100%);transition-duration:.45s}
+/* 目标页首帧就必须铺满：<head> 里的内联脚本命中 sessionStorage 时给 html 加 .pt-in */
+html.pt-in .pv{transform:translateX(0)}
+/* 入场/退场都用 animation，避免 transition 的起始样式竞态导致“闪两次/不滑出” */
+.pv-cover{transform:translateX(0);animation:pvIn .4s cubic-bezier(.65,.05,.36,1) both}
+.pv-out{transform:translateX(100%);animation:pvOut .45s cubic-bezier(.65,.05,.36,1) both}
+@keyframes pvIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes pvOut{from{transform:translateX(0)}to{transform:translateX(100%)}}
 .pv-logo{font:800 20px/1 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
   letter-spacing:.14em;color:#14181f}
-:root[data-theme="dark"] .pv{background:#e9e05c}
+:root[data-theme="dark"] .pv{background:#0d0e12}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .pv{background:#e9e05c}
+  :root:not([data-theme="light"]) .pv{background:#0d0e12}
+}
+:root[data-theme="dark"] .pv-logo{color:#e9ebf0}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .pv-logo{color:#e9ebf0}
 }
 @media (prefers-reduced-motion:reduce){.pv{display:none}}
