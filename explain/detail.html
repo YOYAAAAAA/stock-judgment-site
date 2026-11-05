@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="六层判断链 · 结论详解：为什么这么定、什么情况下作废、常见误判。">
+<title>详解 · 六层判断链</title>
+<link rel="icon" type="image/png" href="../assets/favicon.png">
+<script>try{var t=localStorage.getItem('stock6.v1.theme');if(t)document.documentElement.dataset.theme=JSON.parse(t);}catch(e){}</script>
+<script src="../assets/layers.js" defer></script>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#14181f;--ink2:#4a5261;--ink3:#6b7382;--line:#e2e7ef;--accent:#0071e3;--surface2:#f0f3f8}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg:#0d0e12;--card:#15171d;--ink:#e9ebf0;--ink2:#b3b9c6;--ink3:#8d94a3;--line:#262a33;--accent:#6fb4ff;--surface2:#1b1e25}
+}
+:root[data-theme="dark"]{--bg:#0d0e12;--card:#15171d;--ink:#e9ebf0;--ink2:#b3b9c6;--ink3:#8d94a3;--line:#262a33;--accent:#6fb4ff;--surface2:#1b1e25}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:14px 16px calc(32px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1px solid var(--line);
+  border-radius:10px;color:var(--ink);text-decoration:none;font-size:13.5px;background:var(--card)}
+.back:active{background:var(--surface2)}
+.home{margin-left:auto;color:var(--accent);text-decoration:none;font-size:13px}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin:6px 0 6px}
+h1{margin:0 0 4px;font-size:26px;line-height:1.3;letter-spacing:-.01em}
+.sub{margin:0 0 14px;color:var(--ink2);font-size:13.5px}
+.meta{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);font-size:12.5px;color:var(--ink2)}
+.chip b{color:var(--ink);font-weight:600}
+.chip.pos{color:#b3261e;border-color:#e7b3ac;background:#fdf1ef}
+.chip.neg{color:#0a7042;border-color:#acd6bf;background:#eef8f2}
+.chip.zero{color:#7a5a00;border-color:#e7d49a;background:#fbf6e8}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .chip.pos{color:#ff9d90;border-color:#5a2b26;background:#221413}
+  :root:not([data-theme="light"]) .chip.neg{color:#74ddab;border-color:#1f4a37;background:#0f2119}
+  :root:not([data-theme="light"]) .chip.zero{color:#edcf7a;border-color:#57472a;background:#211c11}
+}
+:root[data-theme="dark"] .chip.pos{color:#ff9d90;border-color:#5a2b26;background:#221413}
+:root[data-theme="dark"] .chip.neg{color:#74ddab;border-color:#1f4a37;background:#0f2119}
+:root[data-theme="dark"] .chip.zero{color:#edcf7a;border-color:#57472a;background:#211c11}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin:0 0 14px}
+.card h2{margin:0 0 8px;font-size:15px;font-weight:600}
+.concl{margin:0;font-size:15px;line-height:1.8;color:var(--ink)}
+.pts{margin:0;padding:0;list-style:none}
+.pt{padding:12px 0;border-top:1px dashed var(--line)}
+.pt:first-child{border-top:0;padding-top:2px}
+.pt h3{margin:0 0 4px;font-size:14.5px;font-weight:600;color:var(--ink)}
+.pt p{margin:0 0 6px;font-size:14px;line-height:1.75;color:var(--ink2)}
+.src{display:inline-block;font-size:12px;line-height:1.6;color:var(--ink3)}
+.note{margin:0;font-size:13.5px;line-height:1.75;color:var(--ink2);background:var(--surface2);
+  border-radius:10px;padding:11px 13px}
+.note b{color:var(--ink)}
+.foot{font-size:12px;line-height:1.8;color:var(--ink3);margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <a class="back" id="back" href="../index.html">← 返回</a>
+    <a class="home" href="../index.html">六层总览</a>
+  </div>
+  <div class="kicker">结论详解 / Detail</div>
+  <h1 id="title">该干嘛</h1>
+  <p class="sub" id="sub">这一层为什么这么定、什么情况下作废、常见误判。</p>
+  <div class="meta" id="meta"></div>
+  <section class="card">
+    <h2>这一层现在怎么说</h2>
+    <p class="concl" id="concl"></p>
+  </section>
+  <section class="card">
+    <h2 id="ptsHead">要点</h2>
+    <ul class="pts" id="pts"></ul>
+  </section>
+  <section class="card">
+    <h2>常见误判</h2>
+    <p class="note" id="mis"></p>
+  </section>
+  <div class="foot">
+    来源锚定：Murphy《Technical Analysis of the Financial Markets》（教材方法）、Bodie《Investments》（学术共识）、
+    Jorion《Value at Risk》（教材方法）、Brealey《Principles of Corporate Finance》（学术共识）；
+    盘口与执行细节属业内经验，仅作参考，不作必答依据。<br>
+    本页是学习工具，不构成投资建议。
+  </div>
+</main>
+<script>
+(function(){
+  var LNAME={layer1:'环境',layer2:'板块',layer3:'位置',layer4:'共振',layer5:'质量',layer6:'仓位'};
+  var KNAME={action:'该干嘛',stop:'止损',switch:'改口条件'};
+  var SNAME={good:'偏有利',bad:'偏不利',neutral:'平稳',unknown:'未判'};
+  var SCLS={good:'pos',bad:'neg',neutral:'zero',unknown:'zero'};
+  var PTS={
+    action:{
+      pos:[
+        {h:'先定风险，再定仓位',d:'先把止损位画在结构下方，再用风险预算 ÷ 止损距离算股数。顺序反了，仓位就是拍脑袋。',s:'Jorion《Value at Risk》：先量化风险，再决定仓位'},
+        {h:'只在量能确认时动手',d:'价格突破但成交量不跟，按“未确认”处理，等量能回来再进。',s:'Murphy：量价需要互相确认'},
+        {h:'首笔不满仓',d:'首笔三成以内，把剩下的仓位留给“确认之后”。',s:'Bodie《Investments》：风险与回报的权衡；业内经验'}],
+      zero:[
+        {h:'不下结论也是一种结论',d:'方向没确认时，等待不产生成本，乱动才产生成本。',s:'Murphy：趋势需要成交量扩散确认'},
+        {h:'把缺的那一项补齐再决定',d:'缺口越大，越容易被单一信号带偏。',s:'Bodie：不要用单一信号做决定'},
+        {h:'观察池不等于买入池',d:'先记录、等触发条件，再谈仓位。',s:'业内经验：观察与下单是两件事'}],
+      neg:[
+        {h:'先退出，再分析',d:'趋势破坏后先离场观察，别在下跌里给自己找理由。',s:'Murphy：趋势破坏后先退出观察'},
+        {h:'不接下跌中的刀',d:'下跌趋势里的反弹多为逃命波，等结构重新站住再说。',s:'业内经验：掉队股反抽多为逃命波'},
+        {h:'已有仓位按写好的止损执行',d:'规则先于判断，触发就走，不临场改口。',s:'Jorion：先量化风险，再决定仓位'}]
+    },
+    stop:{
+      pos:[
+        {h:'止损放在结构下方',d:'用最近的支撑或前低，而不是一个固定百分比；破了就是结构破坏。',s:'Murphy：支撑跌破即结构破坏'},
+        {h:'触发即走，不讨价还价',d:'止损是事先写好的规则，不是盘中重新评估的议题。',s:'Jorion：风险预算先于交易'},
+        {h:'止损距离决定仓位',d:'同样的风险预算，止损越远，仓位必须越小。',s:'Brealey《Principles of Corporate Finance》：风险与回报匹配'}],
+      zero:[
+        {h:'没有仓位，就没有止损',d:'空仓时不用挂止损单；先把“进场后什么价位算失效”写下来。',s:'业内经验：规则先行'},
+        {h:'先写规则，再等信号',d:'把失效条件写成一句可执行的话，而不是“感觉不对就走”。',s:'Murphy：先定义趋势，再谈操作'},
+        {h:'观察池也要有失效条件',d:'不加条件的“关注”，等于永远不结束。',s:'Bodie：先定义风险，再谈收益'}],
+      neg:[
+        {h:'跌破前低就走',d:'已有仓位跌破最近的结构低点，先退出再讨论对错。',s:'Murphy：支撑跌破即结构破坏'},
+        {h:'反弹到均线减，不补仓摊平',d:'摊平是把亏损放大，不是把风险变小。',s:'Jorion：风险暴露不能被“摊平”消除'},
+        {h:'止损触发后不加仓',d:'这条要写进规则，避免临场改口。',s:'业内经验：纪律优先于判断'}]
+    },
+    switch:{
+      pos:[
+        {h:'量价背离先降级',d:'价格创新高但量在缩，先把结论降一档，等量能回来再恢复。',s:'Murphy：量价关系九法则'},
+        {h:'大周期优先',d:'60 分钟与日线冲突时，听日线的。',s:'Murphy：小周期服从大周期'},
+        {h:'出现否决项直接作废',d:'一票否决不看其他项，先按不利处理。',s:'库内否决项口径'}],
+      zero:[
+        {h:'补齐缺的那一项再改口',d:'只差量能就等量能，不靠猜。',s:'Murphy：量价需要互相确认'},
+        {h:'改口条件要能被证伪',d:'写成“看到什么就改口”，而不是“差不多了”。',s:'Bodie：可检验的假设才有意义'},
+        {h:'别因为时间流逝改口',d:'没有新证据，结论不因为过了几天而变化。',s:'业内经验：时间不是证据'}],
+      neg:[
+        {h:'缩量止跌且宽度转多才改口',d:'两个条件同时满足，才算环境转了。',s:'Murphy：量价需要互相确认'},
+        {h:'不要因为“跌多了”改口',d:'便宜不是买入理由，趋势破坏后的反弹多为逃命波。',s:'业内经验：低位放量需二次确认'},
+        {h:'否决项消除才复原',d:'否决没消除，其他项再好也不改口。',s:'库内否决项口径'}]
+    }
+  };
+  var MIS={
+    action:{pos:'把“看对方向”当成“可以重仓”，或用一次信号替代整条链。',
+      zero:'用“再等等看”代替明确的触发条件，等着等着就追高。',
+      neg:'在下跌里找理由补仓，把止损当成建议而不是规则。'},
+    stop:{pos:'止损设得太近，被正常波动打掉；或设得太远，等于没有止损。',
+      zero:'空仓时谈止损，进场时却没写；规则只存在于口头。',
+      neg:'触发后不执行，改用“摊平”或“再给它一天”。'},
+    switch:{pos:'把一次盘中噪音当成趋势改变，频繁改口。',
+      zero:'没有触发条件就改口，凭感觉换方向。',
+      neg:'因为跌幅大、估值低就改口，忽略结构仍在破坏。'}
+  };
+  function q(name){var m=new RegExp('(?:^|[?&])'+name+'=([^&]*)').exec(location.search);return m?decodeURIComponent(m[1]):'';}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function render(){
+    var k=q('k'),l=q('l'),s=q('s');
+    if(q('t')==='dark') document.documentElement.dataset.theme='dark';
+    if(q('t')==='light') document.documentElement.dataset.theme='light';
+    if(!KNAME[k]) k='action';
+    if(!LNAME[l]) l='index';
+    if(!SCLS[s]) s='neutral';
+    var pk=(s==='good'?'pos':(s==='bad'?'neg':'zero'));
+    var layName=LNAME[l]||'六层整卷';
+    var isLayer=l!=='index';
+    document.title=KNAME[k]+' · '+layName+' · 六层判断链';
+    var back=document.getElementById('back');
+    if(isLayer){back.href='../layers/'+l+'.html';back.textContent='← 返回第 '+l.replace('layer','')+' 层';}
+    else{back.href='../index.html';back.textContent='← 返回六层总览';}
+    document.getElementById('title').textContent=KNAME[k];
+    document.getElementById('sub').textContent=(isLayer?('第 '+l.replace('layer','')+' 层 · '+layName):'六层整卷')+' · 这一条为什么这么定、什么情况下作废、常见误判。';
+    var meta='<span class="chip"><b>'+esc(layName)+'</b></span>'
+      +'<span class="chip '+SCLS[s]+'"><b>'+esc(SNAME[s])+'</b></span>';
+    document.getElementById('meta').innerHTML=meta;
+    var ph=null;
+    try{
+      var P=window.JUDGE&&window.JUDGE.phrase&&window.JUDGE.phrase[isLayer?l:'index'];
+      ph=P&&(P[s]||P.neutral);
+    }catch(e){}
+    var concl=ph?ph.pos:(pk==='pos'?'先定风险再定仓位，只在量能确认时动手。':(pk==='neg'?'先退出观察，已有仓位按写好的止损执行。':'先补齐缺口，暂时不下结论。'));
+    if(k==='stop') concl=ph?ph.stop:'先写出可执行的止损位，再谈仓位。';
+    if(k==='switch') concl=ph?ph.flip:'把改口条件写成“看到什么就改口”。';
+    document.getElementById('concl').textContent=concl||'';
+    document.getElementById('ptsHead').textContent=(k==='action'?'该怎么做':(k==='stop'?'止损怎么设':'什么情况下改口'));
+    document.getElementById('pts').innerHTML=PTS[k][pk].map(function(p){
+      return '<li class="pt"><h3>'+esc(p.h)+'</h3><p>'+esc(p.d)+'</p><span class="src">来源：'+esc(p.s)+'</span></li>';
+    }).join('');
+    document.getElementById('mis').innerHTML='<b>最常见的错法：</b>'+esc(MIS[k][pk]);
+  }
+  document.addEventListener('DOMContentLoaded',render);
+})();
+</script>
+</body>
+</html>
