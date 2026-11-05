@@ -549,42 +549,32 @@ body[data-verdict="bad"] .wrap,body[data-verdict="neutral"] .wrap{padding-bottom
 :root[data-theme="dark"] [data-verdict="none"]{--blk:120 124 132}
 :root[data-theme="dark"] .nav-menu{box-shadow:0 10px 30px rgba(0,0,0,.55)}
 :root[data-theme="dark"] .night{--nbg:#0b0b0e;--ncard:#121216;--ncard2:#17171c;--nline:#26262b;border-top:1px solid #1f1f23}
-/* ============ 首屏背景：仅等高线纹理视差（三层，远/中/近） ============ */
+/* ============ 首屏不再有局部背景/纱罩，统一由全站纱罩处理 ============ */
 .hero{position:relative;isolation:isolate;z-index:0}
-.hero > :not(.hero-bg){position:relative;z-index:1}
-/* 首屏背景只在 hero 内铺，后面的内容容器必须压在其上，避免白纱洗淡正文 */
+/* 内容容器统一压在纱罩之上 */
 #siteRoot,.night,#startCard,#stage{position:relative;z-index:1}
-.hero-bg{position:absolute;left:0;right:0;top:0;height:clamp(560px,110vh,920px);z-index:-1;pointer-events:none;overflow:hidden;
-  -webkit-mask-image:linear-gradient(#000 58%,rgba(0,0,0,0));mask-image:linear-gradient(#000 58%,rgba(0,0,0,0))}
-/* 动态渐变层已移除：层级恢复为 纸白底 → 等高线纹理 → 正文 */
-.bg-tex{position:absolute;left:50%;top:50%;transform:translate3d(-50%,-50%,0);
-  background-image:url(tex-contour.jpg);background-repeat:repeat;background-position:center;will-change:transform}
-.t-far{width:154%;height:154%;background-size:560px auto;opacity:.05}
-.t-mid{width:124%;height:124%;background-size:460px auto;opacity:.07}
-.t-near{width:104%;height:104%;background-size:380px auto;opacity:.09}
-.bg-veil{position:absolute;inset:0;background:rgba(245,247,251,.5)}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .bg-veil{background:rgba(9,10,13,.64)}
-  :root:not([data-theme="light"]) .bg-tex{filter:invert(1) brightness(.5)}
-}
-:root[data-theme="dark"] .bg-veil{background:rgba(9,10,13,.64)}
-:root[data-theme="dark"] .bg-tex{filter:invert(1) brightness(.5)}
 /* 全站底纹：直接铺在 html 画布上（最底层），任何容器背景都在它之上；
-   顺序为 纸白底 #f5f5f5 → 等高线纹理 → 正文；
-   不用 body::before + z-index:-1，避免被 body 自身背景（或不支持负层级的浏览器）整块盖掉 */
+   顺序为 纸白底 #f5f5f5 → 等高线纹理 → 全站纱罩 → 正文；
+   纹理不用 body::before + z-index:-1，避免被 body 自身背景（或不支持负层级的浏览器）整块盖掉 */
 html{background-color:var(--bg);background-image:url(tex-contour-1487-light.jpg);background-repeat:repeat;
   background-size:558px 675px;background-position:center top}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){background-image:url(tex-contour-1487-dark.jpg)}
 }
 :root[data-theme="dark"]{background-image:url(tex-contour-1487-dark.jpg)}
+/* 全站唯一一层纱罩：fixed 铺满整页，纹理之上、正文之下；首屏不再单独叠一层。
+   夜间区 .night 自带不透明深底且 z-index:1，会完整盖住这层纱罩，保持纯深底 */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(245,247,251,.5)}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) body::before{background:rgba(9,10,13,.64)}
+}
+:root[data-theme="dark"] body::before{background:rgba(9,10,13,.64)}
 /* 滚动淡入：仅内容区；初始 0 / 28px，播完回自然流 */
 .rv{opacity:0;transform:translate3d(0,28px,0);transition:opacity .7s cubic-bezier(.215,.61,.355,1),transform .7s cubic-bezier(.215,.61,.355,1)}
 .rv-on{opacity:1;transform:translate3d(0,0,0)}
 .rv-anim{will-change:opacity,transform}
 @media (prefers-reduced-motion:reduce){
   .rv{opacity:1;transform:none;transition:none}
-  .bg-tex{will-change:auto}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 /* 页面转场遮幕：只做 translateX，不加阴影/模糊；覆盖导航与量条 */

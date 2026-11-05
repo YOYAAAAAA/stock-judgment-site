@@ -319,9 +319,7 @@
     document.title='第 '+layer.no+' 层 · '+layer.title;
     stageEl=null;
     root.innerHTML=
-      '<div class="hero"><div class="hero-bg" aria-hidden="true">'
-      +'<div class="bg-tex t-far" data-f="0.15"></div><div class="bg-tex t-mid" data-f="0.4"></div><div class="bg-tex t-near" data-f="0.7"></div>'
-      +'<div class="bg-veil"></div></div>'
+      '<div class="hero">'
       +'<div class="kicker">'+esc(layer.kicker)+'</div><h1>'+esc(layer.title)+'</h1>'
       +(layer.lede?'<p class="lede">'+layer.lede+'</p>':'')+(layer.fig?figHTML(layer.fig):'')+'</div>'
       +'<div id="startCard"></div><div id="stage"></div>'
@@ -909,25 +907,6 @@
     },{rootMargin:'0px 0px -15% 0px'});
     scanReveal();
   }
-  /* ---------- 首屏背景：仅纹理视差（三层不同速率，reduced-motion 直接不绑定） ---------- */
-  function initBg(){
-    var hero=document.querySelector('.hero-bg');
-    if(!hero||reduceMotion()) return;
-    var tex=Array.prototype.slice.call(document.querySelectorAll('.bg-tex'));
-    var isLayer=!!document.body.dataset.layer,tick=false;
-    function upd(){
-      tick=false;
-      var y=window.pageYOffset||document.documentElement.scrollTop||0;
-      var r=hero.getBoundingClientRect();
-      if(r.bottom<=0||r.top>=innerHeight) return;
-      tex.forEach(function(el){
-        var f=isLayer?0.15:(parseFloat(el.getAttribute('data-f'))||0);
-        el.style.transform='translate3d(-50%,calc(-50% + '+(y*f).toFixed(1)+'px),0)';
-      });
-    }
-    window.addEventListener('scroll',function(){if(!tick){tick=true;requestAnimationFrame(upd);}},{passive:true});
-    upd();
-  }
   /* ---------- 页面转场：一次点击只允许 一次进入（左入铺满）→ 一次退出（右出） ---------- */
   function initPageTrans(){
     var KEY='stock6.v1.pt';
@@ -1006,7 +985,6 @@
     if(document.body.dataset.page==='index') initIndex();
     else if(document.body.dataset.layer){initLayer();}
     initNav();
-    initBg();
     initReveal();
     initPageTrans();
   });
